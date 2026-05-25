@@ -1,0 +1,161 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+
+
+.education-section {
+   background: linear-gradient(180deg, #90E0EF, #F4E1C1);
+  padding: 6rem 1rem;
+}
+
+.education-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.education-header {
+  margin-bottom: 4rem;
+  text-align: center;
+}
+
+.education-heading {
+  font-size: clamp(2rem, 2.5vw, 4rem);
+  font-weight: 800;
+  margin-bottom: 1.5rem;
+  font-family: "Montserrat", sans-serif;
+   font-style: normal;
+   color: #1B4332;
+}
+
+.education-description {
+  font-size: clamp(1rem, 1.2vw, 1.125rem);
+  color: #2D6A4F;
+  max-width: 52rem;
+  margin: 0 auto;
+  line-height: 1.75;
+   font-family: "DM Sans", sans-serif;
+    font-style: normal;
+}
+
+.education-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-bottom: 4rem;
+}
+
+@media (min-width: 640px) {
+  .education-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.education-card {
+  border-radius: 1rem;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+
+.education-card:hover {
+  transform: translateY(-0.5rem);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+  border-color: currentColor;
+}
+
+.education-card-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.education-color-bar {
+  height: 0.5rem;
+  width: 100%;
+}
+
+.education-card-content {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.education-emoji {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  transition: transform 0.3s ease;
+}
+
+.education-card:hover .education-emoji {
+  transform: scale(1.05);
+}
+
+.education-waste-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.education-time-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  margin-bottom: 1.5rem;
+}
+
+.education-impact {
+  color: var(--muted-foreground);
+  line-height: 1.75;
+  margin-bottom: 1.5rem;
+  flex: 1;
+}
+
+.education-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.education-pill {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.education-examples-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  color: var(--foreground);
+}
+
+.education-last-card-container {
+  display: flex;
+  justify-content: center;
+  padding: 0 1rem;
+  margin-bottom: 4rem;
+}
+
+.education-last-card-wrapper {
+  width: min(100%, 42rem);
+}
+
+.education-bottom-cta {
+  margin-top: 4rem;
+  text-align: center;
+}
+
+.education-bottom-text {
+  font-size: 1rem;
+  color: var(--muted-foreground);
+  max-width: 52rem;
+  margin: 0 auto;
+  line-height: 1.75;
+}
