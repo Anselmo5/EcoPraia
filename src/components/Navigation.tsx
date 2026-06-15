@@ -84,7 +84,7 @@ export default function Navigation() {
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="nav-mobile-toggle"
           >
-            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} color="#fff"/>}
           </button>
             </div>
           )}

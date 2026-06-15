@@ -1,6 +1,7 @@
 // ProfileAccount.tsx
 
 import { useState } from "react";
+import Swal from "sweetalert2";
 import { Eye, EyeOff } from "lucide-react";
 import './ProfileAccount.css';
 
@@ -26,6 +27,13 @@ export default function ProfileAccount() {
 
     try {
       console.log("Saving profile...");
+      Swal.fire({
+        title: "Sucesso!",
+        text: "Perfil atualizado com sucesso!",
+        icon: "success",
+        confirmButtonColor: "#22c55e",
+        timer: 2000,
+      });
       setIsEditing(false);
     } finally {
       setIsSaving(false);
@@ -34,7 +42,12 @@ export default function ProfileAccount() {
 
   const handleChangePassword = async () => {
     if (newPassword !== confirmPassword) {
-      alert("Passwords do not match");
+      Swal.fire({
+        title: "Erro",
+        text: "As senhas não conferem",
+        icon: "error",
+        confirmButtonColor: "#22c55e",
+      });
       return;
     }
 
@@ -42,6 +55,13 @@ export default function ProfileAccount() {
 
     try {
       console.log("Changing password...");
+      Swal.fire({
+        title: "Sucesso!",
+        text: "Senha alterada com sucesso!",
+        icon: "success",
+        confirmButtonColor: "#22c55e",
+        timer: 2000,
+      });
     } finally {
       setIsSaving(false);
     }

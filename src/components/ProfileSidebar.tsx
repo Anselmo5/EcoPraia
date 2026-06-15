@@ -144,13 +144,11 @@ export default function ProfileSidebar({
               setIsOpen(false);
             }}
             className={`sidebar-link ${
-    activeTab === "account"
-      ? "active"
-      : ""
-  }`}
+              activeTab === "account" ? "active" : ""
+            }`}
           >
             <User className="w-5 h-5 flex-shrink-0" />
-            <span className="text-sm font-medium">Profile</span>
+            <span className="text-sm font-medium">Perfil</span>
           </button>
 
           <button
@@ -158,14 +156,12 @@ export default function ProfileSidebar({
               onTabChange("trash-cans");
               setIsOpen(false);
             }}
-         className={`sidebar-link ${
-    activeTab === "trash-cans"
-      ? "active"
-      : ""
-  }`}
+            className={`sidebar-link ${
+              activeTab === "trash-cans" ? "active" : ""
+            }`}
           >
             <Trash2 className="w-5 h-5 flex-shrink-0" />
-            <span className="text-sm font-medium">Trash Cans</span>
+            <span className="text-sm font-medium">Excluir Conta</span>
           </button>
         </nav>
 

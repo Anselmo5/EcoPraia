@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import maplibregl from "maplibre-gl";
+import Swal from "sweetalert2";
 import { MapPin, Trash2, FileText } from "lucide-react";
 import { MapView } from "@/components/Map";
 import "./TrashCanRegistration.css";
@@ -160,7 +161,13 @@ export default function TrashCanRegistration() {
         description: "",
       });
 
-      alert("Trash can registered successfully!");
+      Swal.fire({
+        title: "Sucesso!",
+        text: "Lixeira registrada com sucesso!",
+        icon: "success",
+        confirmButtonColor: "#22c55e",
+        timer: 2000,
+      });
     } finally {
       setIsSubmitting(false);
     }

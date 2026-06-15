@@ -21,9 +21,6 @@ export default function ProfilePage() {
           {activeTab === "account" && (
             <ProfileAccount />
           )}
-          {activeTab === "trash-cans" && (
-            <TrashCanRegistration />
-          )}
         </div>
       </main>
     </div>

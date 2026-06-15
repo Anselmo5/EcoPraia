@@ -1,10 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { getLoginUrl } from "@/const";
 import "./Hero.css";
 
 export default function Hero() {
-
+  const navigate = useNavigate();
   return (
     <section id="home" className="hero-section">
       <div className="hero-background">
@@ -56,10 +57,10 @@ export default function Hero() {
           </p>
 
           <div className="hero-actions">
-            <Button onClick={() => (window.location.href = getLoginUrl())} className="hero-button-primary">
+            <Button onClick={() => navigate("/login")} className="hero-button-primary">
               🔐 Entrar
             </Button>
-            <Button onClick={() => (window.location.href = "/maps")} variant="outline" className="hero-button-outline">
+            <Button onClick={() => navigate("/maps")} variant="outline" className="hero-button-outline">
               🗯️ Explorar Mapa
             </Button>
           </div>

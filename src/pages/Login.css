@@ -121,6 +121,13 @@
   box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2);
 }
 
+.tab-content-container{
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+}
+
 .tab-content {
   margin-top: 1rem;
 }
@@ -129,19 +136,35 @@
   width: 100%;
 }
 
+.forgot-password-container {
+  text-align: right;
+}
+
+.forgot-password-link {
+  font-size: 0.75rem;
+  color: #16a34a;
+  text-decoration: none;
+}
+
+.forgot-password-link:hover {
+  text-decoration: underline;
+}
+
+
+
 .submit-button {
   width: 100%;
   padding: 0.9rem;
   border: none;
+  gap: 1.5rem;
   border-radius: 0.75rem;
   background: #16a34a;
   color: white;
   font-weight: 700;
   cursor: pointer;
   transition: 0.2s;
+
 }
-
-
 
 
 .submit-button:hover {

@@ -20,6 +20,11 @@ export function MapView({
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const onMapReadyRef = useRef(onMapReady);
+
+  useEffect(() => {
+    onMapReadyRef.current = onMapReady;
+  }, [onMapReady]);
 
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
@@ -55,19 +60,14 @@ export function MapView({
     mapRef.current.addControl(new maplibregl.NavigationControl(), "top-right");
 
     mapRef.current.on("load", () => {
-      onMapReady?.(mapRef.current!);
+      onMapReadyRef.current?.(mapRef.current!);
     });
 
     return () => {
       mapRef.current?.remove();
       mapRef.current = null;
     };
-  // Run once (or when onMapReady callback identity changes).
-  // Avoid depending on `initialCenter`/`initialZoom` to prevent
-  // recreating the map when callers pass inline arrays.
-  // If callers need to programmatically center/zoom later, do it via
-  // the `onMapReady` callback and the returned map instance.
-  }, [onMapReady]);
+  }, []);
 
   return <div ref={mapContainer} className={cn("w-full h-[500px]", className)} style={style} />;
 }

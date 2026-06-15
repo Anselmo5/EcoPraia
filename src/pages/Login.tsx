@@ -1,14 +1,10 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "sonner";
+import { LogOut } from "lucide-react";
 import { Leaf } from "lucide-react";
 import beachHero from "@/assets/beach-hero.jpeg";
+import { login, saveToken } from "@/lib/api";
 import "./Login.css";
 
 const schema = z.object({
@@ -21,63 +17,133 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
+
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      // Validate
+      schema.parse({ email, password });
+
+      // Login
+      const response = await login({ email, senha: password });
+
+      // Save token
+      saveToken(response.token);
+
+      // Redirect to profile
+      navigate("/perfil");
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        setError(err.errors[0].message);
+      } else if (err instanceof Error) {
+        setError(err.message || "Falha ao fazer login");
+      } else {
+        setError("Erro desconhecido");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <main
-  className="main-container"
-  style={{ backgroundImage: `url(${beachHero})` }}
->
-  <div className="main-overlay" />
+      className="main-container"
+      style={{ backgroundImage: `url(${beachHero})` }}
+    >
+      <div className="main-overlay" />
+      <div className="login-card">
+        <LogOut
+          size={20}
+          color="#000"
+          className="logout-icon"
+          onClick={() => navigate("/")}
+        />
+        <div className="card-header">
+          <div className="logo-badge">
+            <Leaf className="logo-icon" />
+            <span>Ecopraia</span>
+          </div>
 
-  <div className="login-card">
-    <div className="card-header">
-      <div className="logo-badge">
-        <Leaf className="logo-icon" />
-        <span>Ecopraia</span>
+          <h1 className="title">Consciência na Orla</h1>
+
+          <p className="subtitle">Entre para descartar com consciência</p>
+        </div>
+
+        {error && (
+          <div
+            className="error-message"
+            style={{
+              color: "#ef4444",
+              marginBottom: "1rem",
+              textAlign: "center",
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label htmlFor="email">E-mail</label>
+
+            <input
+              id="email"
+              type="email"
+              placeholder="voce@email.com"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              disabled={loading}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="password">Senha</label>
+
+            <input
+              id="password"
+              type="password"
+              placeholder="••••••"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              disabled={loading}
+            />
+          </div>
+
+          <div className="forgot-password-container">
+            <Link to="/recuperar-senha" className="forgot-password-link">
+              Esqueci minha senha
+            </Link>
+          </div>
+
+          <div className="tab-content-container">
+            <div className="tab-content">
+              <button
+                type="submit"
+                className="submit-button"
+                disabled={loading}
+              >
+                {loading ? "Entrando..." : "Entrar"}
+              </button>
+            </div>
+
+            <div className="tab-content">
+              <button
+                onClick={() => navigate("/cadastro")}
+                className="submit-button secondary"
+                disabled={loading}
+              >
+                Criar conta
+              </button>
+            </div>
+          </div>
+        </form>
       </div>
-
-      <h1 className="title">Consciência na Orla</h1>
-
-      <p className="subtitle">
-        Entre para descartar com consciência
-      </p>
-    </div>
-
- 
-
-    <div className="form-group">
-      <label htmlFor="email">E-mail</label>
-
-      <input
-        id="email"
-        type="email"
-        placeholder="voce@email.com"
-      />
-    </div>
-
-    <div className="form-group">
-      <label htmlFor="password">Senha</label>
-
-      <input
-        id="password"
-        type="password"
-        placeholder="••••••"
-      />
-    </div>
-
-    <div className="tab-content">
-      <button className="submit-button">
-        Entrar
-      </button>
-    </div>
-
-    <div className="tab-content">
-      <button onClick={() => window.location.href= "/cadastro"} className="submit-button secondary">
-        Criar conta
-      </button>
-    </div>
-  </div>
-</main>
+    </main>
   );
 }

@@ -10,6 +10,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./App.css";
 import Cadastro from "./pages/Cadastro";
 import Perfil from "./pages/Perfil";
+import RestPassword from "./pages/RestPassword";
+import Maps from "./pages/Maps";
 
 function App() {
   return (
@@ -19,7 +21,9 @@ function App() {
                   <Route path="/" element={<Home />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/cadastro" element={<Cadastro />} />
-                  <Route path="/Perfil" element={<Perfil />} />
+                  <Route path="/perfil" element={<Perfil />} />
+                  <Route path="/recuperar-senha" element={<RestPassword />} />
+                  <Route path="/maps" element={<Maps />} />
                 </Routes>
             </div>
           </BrowserRouter>
