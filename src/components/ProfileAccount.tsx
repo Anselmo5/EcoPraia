@@ -1,4 +1,4 @@
-// ProfileAccount.tsx
+
 
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
@@ -23,9 +23,9 @@ export default function ProfileAccount() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  // Campos extras exigidos pelo DTO de administrador (admistradoresPut).
-  // Não aparecem no formulário, só são preservados ao salvar pra não
-  // sobrescrever com vazio.
+  
+  
+  
   const [instituicao, setInstituicao] = useState("");
   const [cargo, setCargo] = useState("");
 
@@ -80,7 +80,7 @@ export default function ProfileAccount() {
     }
 
     if (admin) {
-      // Conta de administrador vive em /administradores, não em /usuarios
+      
       getAdministrador({ id })
         .then((res: any) => {
           const data = res?.data ?? {};
@@ -99,10 +99,10 @@ export default function ProfileAccount() {
           const data = res?.data ?? {};
           setFirstName(data.nome || '');
           setLastName('');
-          // A senha nunca é (e não deve ser) retornada pelo back-end por
-          // segurança — o campo "Senha Atual" fica vazio de propósito,
-          // o próprio usuário deve digitá-la para confirmar identidade
-          // antes de trocar a senha.
+          
+          
+          
+          
           setEmail(data.email || storedEmail || '');
         })
         .catch((error) => {
@@ -208,9 +208,9 @@ export default function ProfileAccount() {
     setIsChangingPassword(true);
 
     try {
-      // OBS: o back-end (AtualizarSenhaUsuarioDTO / AtualizarSenhaAdministradorDTO)
-      // só recebe a nova senha, não valida a senha atual — por isso
-      // currentPassword não é enviada.
+      
+      
+      
       if (isAdminAccount) {
         await patchAdministradorSenha(userId, { senha: newPassword });
       } else {
@@ -384,7 +384,7 @@ export default function ProfileAccount() {
             </div>
           </div>
 
-          {/* CONFIRM PASSWORD */}
+          {}
           <div className="profile-field">
             <label>Confirmar Senha</label>
 

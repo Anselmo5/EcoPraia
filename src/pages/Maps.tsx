@@ -98,7 +98,7 @@ function loadSavedLixeiraTypes(): Record<string, string[]> {
       );
     }
   } catch {
-    // ignore invalid saved state
+    
   }
 
   return {};
@@ -130,13 +130,13 @@ function getSavedLixeiraTypes(id: string): string[] | undefined {
   return loadSavedLixeiraTypes()[id];
 }
 
-/**
- * Tenta localizar o array de tipos de resíduo dentro do objeto vindo do
- * backend, testando alguns nomes de campo comuns. Se não encontrar nada
- * reconhecível (mas existir informativosTiposIds), emite um aviso no
- * console com o item bruto, pra facilitar identificar o formato real
- * que a API está devolvendo.
- */
+
+
+
+
+
+
+
 function extractWasteTypeNames(item: any, wasteTypes: WasteTypeOption[]): string[] {
   const normalizeType = (tipo: any): string | null => {
     if (tipo == null) return null;

@@ -15,7 +15,7 @@ export default function ProfilePage() {
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   useEffect(() => {
-    // Se não está logado, redireciona para login
+    
     if (!isAuthenticated()) {
       navigate("/login", { replace: true });
       return;
@@ -81,16 +81,16 @@ export default function ProfilePage() {
 
   return (
   <div className="profile-layout" >
-      {/* SIDEBAR */}
+      {}
       <ProfileSidebar
         activeTab={activeTab}
         onTabChange={setActiveTab}
       />
 
-      {/* CONTENT */}
+      {}
       <main className="profile-content">
         <div className="profile-content-wrapper">
-          {/* Header com botões de ação */}
+          {}
           <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', alignItems: 'center' }}>
             <Button 
               onClick={handleGoToMap}

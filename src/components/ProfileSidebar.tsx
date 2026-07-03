@@ -91,8 +91,8 @@ export default function ProfileSidebar({
       return;
     }
 
-    // Admin e usuário comum são entidades separadas no backend
-    // (/administradores/{id} vs /usuarios/{id}) — usa a rota certa.
+    
+    
     if (isAdmin()) {
       getAdministrador({ id: userId })
         .then((res: any) => {
@@ -128,7 +128,7 @@ export default function ProfileSidebar({
       if (!t) return;
       const x = t.clientX;
       const nearEdge = x <= 24;
-      if (!isOpen && !nearEdge) return; // only start from edge when closed
+      if (!isOpen && !nearEdge) return; 
 
       startXRef.current = x;
       const closedTranslate = -widthRef.current + peekRef.current;

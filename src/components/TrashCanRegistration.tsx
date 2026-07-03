@@ -62,7 +62,7 @@ export default function TrashCanRegistration() {
             map.setZoom(15);
 
             if (markerRef.current) markerRef.current.remove();
-            // visible marker element
+            
             const el = document.createElement("div");
             el.style.width = "28px";
             el.style.height = "28px";
@@ -131,7 +131,7 @@ export default function TrashCanRegistration() {
             setFormData(prev => ({ ...prev, address: display }));
           }
         } catch (e) {
-          // ignore reverse geocode errors
+          
         }
       })();
     });
@@ -221,7 +221,7 @@ export default function TrashCanRegistration() {
               <p className="trash-hint">Clique no mapa para preencher automaticamente</p>
             </div>
 
-            {/* LONGITUDE */}
+            {}
             <div className="trash-field">
               <label>
                 Longitude <span className="required">*</span>
@@ -240,7 +240,7 @@ export default function TrashCanRegistration() {
             </div>
           </div>
 
-          {/* TYPE */}
+          {}
           <div className="trash-field">
             <label>
               Tipo de Lixeira <span className="required">*</span>

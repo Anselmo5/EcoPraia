@@ -81,7 +81,7 @@ export default function EducationSection() {
   return (
     <section id="education" className="education-section">
       <div className="education-inner">
-        {/* Header */}
+        {}
         <div className="education-header">
           <h2 className="education-heading">Educação Ambiental</h2>
           <p className="education-description">
@@ -89,7 +89,7 @@ export default function EducationSection() {
           </p>
         </div>
 
-        {/* Cards Grid - 2-2-1 Layout */}
+        {}
         <div className="education-grid">
           {WASTE_TYPES.slice(0, 4).map((waste) => (
             <Card
@@ -126,7 +126,7 @@ export default function EducationSection() {
           ))}
         </div>
 
-        {/* Last Card (5th) - Centered */}
+        {}
         <div className="education-last-card-container">
           <div className="education-last-card-wrapper">
             <Card

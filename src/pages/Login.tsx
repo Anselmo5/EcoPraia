@@ -19,7 +19,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Se já está logado, redireciona para perfil
+  
   if (isAuthenticated()) {
     navigate("/perfil", { replace: true });
     return null;
@@ -34,10 +34,10 @@ export default function Login() {
       schema.parse({ email, password });
       const response = await login({ nome: "", email, senha: password });
 
-      // O /auth/login já pode devolver role/id diretamente — usamos isso
-      // como fonte principal, já que é mais confiável que uma segunda
-      // chamada. Só caímos no fetchCurrentUserRole() como reforço/fallback
-      // caso o login não traga a role.
+      
+      
+      
+      
       saveToken(response.token, response.role, response.id, email);
 
       const fallbackUser = await fetchCurrentUserInfo();

@@ -125,7 +125,7 @@ export default function Navigation() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {}
       {isMobile && mobileMenuOpen && (
         <div className="nav-mobile-menu">
           <div className="nav-mobile-list">

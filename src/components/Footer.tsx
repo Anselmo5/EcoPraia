@@ -8,7 +8,7 @@ export default function Footer() {
     <footer className="footer">
       <div className="footer-inner">
         <div className="footer-grid">
-          {/* Brand */}
+          {}
           <div>
             <div className="footer-brand-top">
               <div className="footer-brand-logo">
@@ -21,7 +21,7 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Quick Links */}
+          {}
           <div>
             <h4 className="footer-heading">Links</h4>
             <ul className="footer-link-list">
@@ -48,7 +48,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Resources */}
+          {}
           <div>
             <h4 className="footer-heading">Recursos</h4>
             <ul className="footer-link-list">
@@ -70,7 +70,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Social */}
+          {}
           <div>
             <h4 className="footer-heading">Redes Sociais</h4>
             <div className="footer-social">
@@ -94,10 +94,10 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Divider */}
+        {}
         <div className="footer-divider"></div>
 
-        {/* Bottom */}
+        {}
         <div className="footer-bottom">
           <p>
             © {currentYear} EcoPraia. Juntos pela preservação das nossas praias 

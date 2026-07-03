@@ -102,7 +102,7 @@ export default function WasteGuideSection() {
   return (
     <section id="guide" className="guide-section">
       <div className="guide-inner">
-        {/* Header */}
+        {}
         <div className="guide-header">
           <h2 className="guide-heading">Guia de Cores das Lixeiras</h2>
           <p className="guide-description">
@@ -110,7 +110,7 @@ export default function WasteGuideSection() {
           </p>
         </div>
 
-        {/* Bins Grid - 2-2-1 Layout */}
+        {}
         <div className="guide-grid">
           {WASTE_BINS.slice(0, 4).map((bin, index) => (
             <div
@@ -123,28 +123,28 @@ export default function WasteGuideSection() {
               style={{ transitionDelay: visibleBins.has(bin.id) ? `${index * 100}ms` : "0ms" }}
             >
               <Card className="guide-card" style={{ backgroundColor: bin.bgColor }}>
-                {/* Bin Visualization - Improved */}
+                {}
                 <div className="guide-bin-visual">
-                  {/* Large Icon */}
+                  {}
                   <div className="guide-bin-icon">{bin.icon}</div>
                 </div>
 
-                {/* Content */}
+                {}
                 <div className="guide-card-body">
-                  {/* Color Badge */}
+                  {}
                   <div>
                     <Badge className="guide-badge" style={{ backgroundColor: bin.color }}>
                       {bin.name}
                     </Badge>
                   </div>
 
-                  {/* Title */}
+                  {}
                   <h3 className="guide-bin-title">{bin.wasteType}</h3>
 
-                  {/* Description */}
+                  {}
                   <p className="guide-bin-description">{bin.description}</p>
 
-                  {/* Examples */}
+                  {}
                   <div className="guide-bin-examples">
                     <p className="guide-bin-examples-label">Exemplos:</p>
                     {bin.examples.map((example) => (
@@ -159,7 +159,7 @@ export default function WasteGuideSection() {
           ))}
         </div>
 
-        {/* Last Bin (5th) - Centered */}
+        {}
         <div className="guide-last-bin-container">
           <div className="guide-last-bin">
             <div
@@ -174,28 +174,28 @@ export default function WasteGuideSection() {
               }}
             >
               <Card className="guide-card" style={{ backgroundColor: WASTE_BINS[4].bgColor }}>
-                {/* Bin Visualization - Improved */}
+                {}
                 <div className="guide-bin-visual">
-                  {/* Large Icon */}
+                  {}
                   <div className="guide-bin-icon">{WASTE_BINS[4].icon}</div>
                 </div>
 
-                {/* Content */}
+                {}
                 <div className="guide-card-body">
-                  {/* Color Badge */}
+                  {}
                   <div>
                     <Badge className="guide-badge" style={{ backgroundColor: WASTE_BINS[4].color }}>
                       {WASTE_BINS[4].name}
                     </Badge>
                   </div>
 
-                  {/* Title */}
+                  {}
                   <h3 className="guide-bin-title">{WASTE_BINS[4].wasteType}</h3>
 
-                  {/* Description */}
+                  {}
                   <p className="guide-bin-description">{WASTE_BINS[4].description}</p>
 
-                  {/* Examples */}
+                  {}
                   <div className="guide-bin-examples">
                     <p className="guide-bin-examples-label">Exemplos:</p>
                     {WASTE_BINS[4].examples.map((example) => (
@@ -217,7 +217,7 @@ export default function WasteGuideSection() {
             Dicas Importantes
           </h3>
           <div className="guide-tips-grid">
-            {/* Do's */}
+            {}
             <div>
               <div className="guide-tips-header">
                 <CheckCircle2 className="guide-tips-icon-check" />
@@ -243,7 +243,7 @@ export default function WasteGuideSection() {
               </ul>
             </div>
 
-            {/* Don'ts */}
+            {}
             <div>
               <div className="guide-tips-header">
                 <AlertCircle className="guide-tips-icon-alert" />

@@ -47,8 +47,8 @@ const ResetPassword = () => {
     setLoading(true);
 
     try {
-      // Aqui você pode chamar a API ou serviço que envia a solicitação
-      // de atualização de senha. Atualmente está simulado.
+      
+      
       await new Promise(resolve => setTimeout(resolve, 800));
       setCompleted(true);
       toast.success("Senha atualizada com sucesso!");

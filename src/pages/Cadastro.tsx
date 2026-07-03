@@ -25,7 +25,7 @@ const schema = z
 const Signup = () => {
   const navigate = useNavigate();
 
-  // Se já está logado, redireciona para perfil
+  
   if (isAuthenticated()) {
     navigate("/perfil", { replace: true });
     return null;

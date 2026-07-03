@@ -1,4 +1,4 @@
-// Usuarios
+
 
 export interface Usuarioget {
   id: string;
@@ -27,7 +27,7 @@ export interface CurrentUserResponse {
   role: string;
 }
 
-// lixeiras
+
 
 export interface lixeiraGet {
   id: string;
@@ -50,7 +50,7 @@ export interface lixeiraPost {
   informativosTiposIds: number[];
 }
 
-// informativos
+
 
 export interface informativosGet {
   id: string;
@@ -73,7 +73,7 @@ export interface informativosPost {
   cor: string;
 }
 
-// administradores
+
 
 export interface admistradoresGet {
   id: string;
@@ -100,7 +100,7 @@ export interface admistradoresPost {
   cargo: string;
 }
 
-// historico
+
 
 export interface historicoGet {
   id: string;

@@ -1,4 +1,4 @@
-// api.ts
+
 
 import axios from 'axios';
 import * as ApiTypes from '../types/api';
@@ -19,17 +19,17 @@ if (storedToken) {
   api.defaults.headers.common.Authorization = `Bearer ${storedToken}`;
 }
 
-/**
- * Decodifica o payload de um JWT (base64url) e tenta extrair o id do usuário.
- *
- * CORREÇÃO: base64url não tem padding ('='), e o atob() nativo pode falhar
- * silenciosamente (cai no catch) se o payload não tiver múltiplo de 4
- * caracteres. Também foi adicionado o decodeURIComponent/escape para lidar
- * corretamente com caracteres acentuados (ex: nome "João") sem corromper o
- * JSON. Por fim, a lista de possíveis nomes de claim foi ampliada e um log
- * temporário foi adicionado para você identificar o nome exato da claim
- * que o seu back-end está usando.
- */
+
+
+
+
+
+
+
+
+
+
+
 function extractUserIdFromToken(token: string): string | null {
   try {
     const [, payload] = token.split('.');
@@ -42,8 +42,8 @@ function extractUserIdFromToken(token: string): string | null {
 
     const decoded = JSON.parse(decodeURIComponent(escape(atob(normalized))));
 
-    // TEMPORÁRIO: veja no console quais claims o token realmente tem
-    // e depois remova esse log.
+    
+    
     console.log('[extractUserIdFromToken] claims decodificadas:', decoded);
 
     const sub = decoded?.sub?.toString();
@@ -61,15 +61,15 @@ function extractUserIdFromToken(token: string): string | null {
   }
 }
 
-/**
- * Extrai um nome de role a partir de formatos diferentes que a API pode
- * devolver:
- *  - string simples: "ROLE_ADMIN"
- *  - array de authorities do Spring Security: [{ authority: "ROLE_ADMIN" }]
- *  - array de strings: ["ROLE_ADMIN", "ROLE_USER"]
- *  - array de objetos com outros nomes de campo: [{ role: "..." }], [{ name: "..." }]
- * Se houver mais de uma role, prioriza qualquer uma que contenha "ADMIN".
- */
+
+
+
+
+
+
+
+
+
 function extractRoleString(raw: any): string | null {
   if (!raw) return null;
 
@@ -228,8 +228,8 @@ export function isAdmin(): boolean {
   const role = normalizeRole(getRole());
   if (!role) return false;
   if (ADMIN_ROLE_VALUES.has(role)) return true;
-  // fallback: qualquer role que contenha "ADMIN" no texto
-  // (cobre variações que a gente ainda não previu, tipo "ROLE_ADMINISTRADOR_GERAL")
+  
+  
   return role.includes('ADMIN');
 }
 
@@ -237,7 +237,7 @@ export function isAuthenticated(): boolean {
   return getToken() !== null;
 }
 
-// Lixeiras
+
 async function getLixeiras(params: ApiTypes.lixeiraGet) {
   return await api.get(`/lixeiras/${params.id}`);
 }
@@ -258,7 +258,7 @@ async function getLixeirasAll() {
   return await api.get('/lixeiras/todos');
 }
 
-// Usuários
+
 async function getUsuario(params: ApiTypes.Usuarioget) {
   return await api.get(`/usuarios/${params.id}`);
 }
@@ -289,7 +289,7 @@ async function patchUsuarioSenha(id: string, data: ApiTypes.AtualizarSenhaUsuari
   return await api.patch(`/usuarios/${id}/senha`, data);
 }
 
-// Informativos
+
 async function getInformativos(params: ApiTypes.informativosGet) {
   return await api.get(`/informativos/${params.id}`);
 }
@@ -310,7 +310,7 @@ async function getInformativosAll() {
   return await api.get('/informativos/todos');
 }
 
-// Administradores
+
 async function getAdministrador(params: { id: string }) {
   return await api.get(`/administradores/${params.id}`);
 }
@@ -331,7 +331,7 @@ async function patchAdministradorSenha(id: string, data: ApiTypes.AtualizarSenha
   return await api.patch(`/administradores/${id}/senha`, data);
 }
 
-// Histórico
+
 async function postHistorico(data: ApiTypes.historicoPost) {
   return await api.post('/historicos', {}, { params: data });
 }
@@ -348,7 +348,7 @@ async function getHistoricoAll() {
   return await api.get('/historicos/todos');
 }
 
-// Auth
+
 async function login(data: ApiTypes.loginPost) {
   const response = await api.post('/auth/login', data);
   return response.data as ApiTypes.LoginResponse;
@@ -378,7 +378,7 @@ export async function fetchCurrentUserRole(): Promise<string | null> {
   }
 }
 
-// Geolocalização e rotas
+
 async function getLixeiraDistancia(id: number, lat: number, lng: number) {
   return await api.get(`/lixeiras/${id}/distancia`, { params: { lat, lng } });
 }
@@ -392,7 +392,7 @@ async function getLixeiraRota(id: number, lat: number, lng: number, modo: 'A_PE'
 }
 
 export {
-  // Lixeiras
+  
   getLixeiras,
   postLixeiras,
   putLixeiras,
@@ -401,31 +401,31 @@ export {
   getLixeiraDistancia,
   getLixeirasProximas,
   getLixeiraRota,
-  // Usuários
+  
   getUsuario,
   postUsuario,
   register,
   putUsuario,
   deleteUsuario,
   patchUsuarioSenha,
-  // Informativos
+  
   getInformativos,
   postInformativos,
   putInformativos,
   deleteInformativos,
   getInformativosAll,
-  // Administradores
+  
   getAdministrador,
   postAdministrador,
   putAdministrador,
   deleteAdministrador,
   patchAdministradorSenha,
-  // Histórico
+  
   postHistorico,
   getHistorico,
   deleteHistorico,
   getHistoricoAll,
-  // Auth
+  
   login,
   fetchCurrentUserInfo,
 };
