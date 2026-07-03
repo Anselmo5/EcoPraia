@@ -20,48 +20,42 @@ interface TrashLocation {
 const TRASH_LOCATIONS: TrashLocation[] = [
   {
     id: "1",
-    lat: -27.5954,
-    lng: -48.5477,
+    lat: -27.6032,
+    lng: -48.4354,
     name: "Lixeiras Praia Mole",
     beach: "Praia Mole",
     types: ["Plástico", "Vidro", "Papel"],
-    address: "Praia Mole, Florianópolis",
+    address: "Faixa de areia central - Praia Mole",
   },
+
   {
     id: "2",
-    lat: -27.6062,
-    lng: -48.5403,
+    lat: -27.6047,
+    lng: -48.4589,
     name: "Lixeiras Lagoa da Conceição",
     beach: "Lagoa da Conceição",
     types: ["Plástico", "Orgânico", "Metal"],
-    address: "Lagoa da Conceição, Florianópolis",
+    address: "Centrinho da Lagoa da Conceição",
   },
+
   {
     id: "3",
-    lat: -27.5883,
-    lng: -48.5322,
+    lat: -27.3993,
+    lng: -48.4154,
     name: "Lixeiras Praia Brava",
     beach: "Praia Brava",
     types: ["Vidro", "Papel", "Metal"],
-    address: "Praia Brava, Florianópolis",
+    address: "Faixa de areia central - Praia Brava",
   },
+
   {
     id: "4",
-    lat: -27.6412,
-    lng: -48.5244,
-    name: "Lixeiras Praia Campeche",
-    beach: "Praia Campeche",
+    lat: -27.6946,
+    lng: -48.4779,
+    name: "Lixeiras Praia do Campeche",
+    beach: "Praia do Campeche",
     types: ["Plástico", "Vidro", "Orgânico"],
-    address: "Praia Campeche, Florianópolis",
-  },
-  {
-    id: "5",
-    lat: -27.5706,
-    lng: -48.5176,
-    name: "Lixeiras Praia Joaquina",
-    beach: "Praia Joaquina",
-    types: ["Plástico", "Papel", "Metal"],
-    address: "Praia Joaquina, Florianópolis",
+    address: "Faixa de areia central - Praia do Campeche",
   },
 ];
 
@@ -127,7 +121,7 @@ export default function MapsSection() {
           </p>
         </div>
 
-        {/* Map Container */}
+      
         <div className="maps-map-container">
           {isLoading && !mapError && (
             <div className="maps-loading">

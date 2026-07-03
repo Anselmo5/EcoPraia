@@ -1,17 +1,18 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, LogOut } from "lucide-react";
-import { getLoginUrl } from "@/const";
+import { Menu, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { isAuthenticated, getRole, fetchCurrentUserRole } from "@/lib/api";
 import "./Navigation.css";
 
 export default function Navigation() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
   const navigate = useNavigate();
 
-
-    useEffect(() => {
+  useEffect(() => {
     const handleResize = () => {
       const mobileCheck = window.innerWidth <= 768;
       setIsMobile(mobileCheck);
@@ -21,10 +22,24 @@ export default function Navigation() {
       }
     };
 
+    const syncAuthState = async () => {
+      const authenticatedState = isAuthenticated();
+      setAuthenticated(authenticatedState);
+
+      let roleValue = getRole();
+      if (authenticatedState && !roleValue) {
+        roleValue = await fetchCurrentUserRole();
+      }
+      setRole(roleValue);
+    };
+
+    syncAuthState();
     window.addEventListener("resize", handleResize);
+    window.addEventListener("storage", syncAuthState);
 
     return () => {
       window.removeEventListener("resize", handleResize);
+      window.removeEventListener("storage", syncAuthState);
     };
   }, []);
 
@@ -33,6 +48,14 @@ export default function Navigation() {
     if (element) {
       element.scrollIntoView({ behavior: "smooth" });
       setMobileMenuOpen(false);
+    }
+  };
+
+  const handleLoginClick = () => {
+    if (authenticated) {
+      navigate("/perfil");
+    } else {
+      navigate("/login");
     }
   };
 
@@ -66,15 +89,26 @@ export default function Navigation() {
         </div>
         )}
 
-        {/* Auth Buttons */}
-        <div className="nav-auth">
+   
+        <div className="nav-auth" style={{ display: 'flex', alignItems: 'center', gap: '1rem',}}>
+          {authenticated && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: '#10b981', fontWeight: 'bold',}}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981'}}></div>
+              Logado
+              {role === 'ROLE_ADMIN' && (
+                <span style={{ marginLeft: '0.5rem', padding: '0.25rem 0.5rem', backgroundColor: '#10b981', color: 'white', borderRadius: '0.25rem', fontSize: '0.75rem' }}>
+                  Admin
+                </span>
+              )}
+            </div>
+          )}
       
             <Button
-              onClick={() => navigate("/login")}
+              onClick={handleLoginClick}
               variant="outline"
               className="nav-button-primary"
             >
-              Login
+              {authenticated ? "Perfil" : "Entrar"}
             </Button>
 
          

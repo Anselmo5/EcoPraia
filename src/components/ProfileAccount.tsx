@@ -1,11 +1,30 @@
 // ProfileAccount.tsx
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { Eye, EyeOff } from "lucide-react";
+import { getUsuario, putUsuario, patchUsuarioSenha } from "@/lib/api";
 import './ProfileAccount.css';
 
+function decodeJWT(token: string): any {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error('Erro ao decodificar JWT:', error);
+    return null;
+  }
+}
+
 export default function ProfileAccount() {
+  const [userId, setUserId] = useState<string | null>(null);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -21,12 +40,66 @@ export default function ProfileAccount() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('ecopraia:token');
+    if (token) {
+      const decoded = decodeJWT(token);
+      if (decoded && decoded.sub) {
+        const id = decoded.id;
+        if (id) {
+          setUserId(String(id));
+          getUsuario({ id })
+            .then((data: any) => {
+              setFirstName(data.nome || '');
+              setLastName('');
+              // A senha nunca é (e não deve ser) retornada pelo back-end por
+              // segurança — o campo "Senha Atual" fica vazio de propósito,
+              // o próprio usuário deve digitá-la para confirmar identidade
+              // antes de trocar a senha.
+              setEmail(data.email || '');
+            })
+            .catch((error) => {
+              console.error('Erro ao buscar usuário:', error);
+              setEmail(decoded.sub || '');
+            });
+        } else {
+          setEmail(decoded.sub || '');
+        }
+      }
+    }
+  }, []);
 
   const handleSave = async () => {
+    if (!userId) {
+      Swal.fire({
+        title: "Erro",
+        text: "Não foi possível identificar o usuário logado.",
+        icon: "error",
+        confirmButtonColor: "#22c55e",
+      });
+      return;
+    }
+
+    if (!firstName.trim() || firstName.trim().length < 3) {
+      Swal.fire({
+        title: "Erro",
+        text: "O nome deve ter entre 3 e 255 caracteres.",
+        icon: "error",
+        confirmButtonColor: "#22c55e",
+      });
+      return;
+    }
+
     setIsSaving(true);
 
     try {
-      console.log("Saving profile...");
+      await putUsuario(userId, {
+        nome: firstName.trim(),
+        email: email.trim(),
+      });
+
       Swal.fire({
         title: "Sucesso!",
         text: "Perfil atualizado com sucesso!",
@@ -35,12 +108,44 @@ export default function ProfileAccount() {
         timer: 2000,
       });
       setIsEditing(false);
+    } catch (err: any) {
+      console.error("Erro ao atualizar perfil:", err);
+      Swal.fire({
+        title: "Erro",
+        text:
+          err?.response?.data?.message ||
+          err?.response?.data ||
+          err?.message ||
+          "Não foi possível atualizar o perfil.",
+        icon: "error",
+        confirmButtonColor: "#22c55e",
+      });
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleChangePassword = async () => {
+    if (!userId) {
+      Swal.fire({
+        title: "Erro",
+        text: "Não foi possível identificar o usuário logado.",
+        icon: "error",
+        confirmButtonColor: "#22c55e",
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      Swal.fire({
+        title: "Erro",
+        text: "A nova senha deve ter no mínimo 6 caracteres.",
+        icon: "error",
+        confirmButtonColor: "#22c55e",
+      });
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       Swal.fire({
         title: "Erro",
@@ -51,10 +156,13 @@ export default function ProfileAccount() {
       return;
     }
 
-    setIsSaving(true);
+    setIsChangingPassword(true);
 
     try {
-      console.log("Changing password...");
+      // OBS: o back-end (AtualizarSenhaUsuarioDTO) só recebe a nova senha,
+      // não valida a senha atual — por isso currentPassword não é enviada.
+      await patchUsuarioSenha(userId, { senha: newPassword });
+
       Swal.fire({
         title: "Sucesso!",
         text: "Senha alterada com sucesso!",
@@ -62,8 +170,24 @@ export default function ProfileAccount() {
         confirmButtonColor: "#22c55e",
         timer: 2000,
       });
+
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      console.error("Erro ao alterar senha:", err);
+      Swal.fire({
+        title: "Erro",
+        text:
+          err?.response?.data?.message ||
+          err?.response?.data ||
+          err?.message ||
+          "Não foi possível alterar a senha.",
+        icon: "error",
+        confirmButtonColor: "#22c55e",
+      });
     } finally {
-      setIsSaving(false);
+      setIsChangingPassword(false);
     }
   };
 
@@ -86,47 +210,28 @@ export default function ProfileAccount() {
             disabled={isSaving}
           >
             {isSaving
-              ? "Saving..."
+              ? "Salvando..."
               : isEditing
-              ? "Save Changes"
+              ? "Salvar Alterações"
               : "Edição"}
           </button>
         </div>
 
         <div className="profile-form">
-          <div className="profile-grid">
-        
-            <div className="profile-field">
-              <label>Nome</label>
+          <div className="profile-field">
+            <label>Nome</label>
 
-              <input
-                type="text"
-                value={firstName}
-                onChange={(e) =>
-                  setFirstName(e.target.value)
-                }
-                disabled={!isEditing}
-                className="profile-input"
-              />
-            </div>
-
-       
-            <div className="profile-field">
-              <label>Sobrenome</label>
-
-              <input
-                type="text"
-                value={lastName}
-                onChange={(e) =>
-                  setLastName(e.target.value)
-                }
-                disabled={!isEditing}
-                className="profile-input"
-              />
-            </div>
+            <input
+              type="text"
+              value={firstName}
+              onChange={(e) =>
+                setFirstName(e.target.value)
+              }
+              disabled={!isEditing}
+              className="profile-input"
+            />
           </div>
 
-          {/* EMAIL */}
           <div className="profile-field">
             <label>Email</label>
 
@@ -150,7 +255,7 @@ export default function ProfileAccount() {
         </div>
 
         <div className="profile-form">
-          {/* CURRENT PASSWORD */}
+     
           <div className="profile-field">
             <label>Senha Atual</label>
 
@@ -165,6 +270,7 @@ export default function ProfileAccount() {
                 onChange={(e) =>
                   setCurrentPassword(e.target.value)
                 }
+                placeholder="Digite sua senha atual"
                 className="profile-input"
               />
 
@@ -188,7 +294,6 @@ export default function ProfileAccount() {
             </div>
           </div>
 
-          {/* NEW PASSWORD */}
           <div className="profile-field">
             <label>Nova Senha</label>
 
@@ -269,14 +374,14 @@ export default function ProfileAccount() {
             className="profile-btn profile-btn-primary"
             onClick={handleChangePassword}
             disabled={
-              isSaving ||
+              isChangingPassword ||
               !currentPassword ||
               !newPassword ||
               !confirmPassword
             }
           >
-            {isSaving
-              ? "Updating..."
+            {isChangingPassword
+              ? "Atualizando..."
               : "Atualizar Senha"}
           </button>
         </div>

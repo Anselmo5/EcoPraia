@@ -2,7 +2,9 @@ import axios from 'axios';
 import * as ApiTypes from '../types/api';
 
 const API_TOKEN_KEY = 'ecopraia:token';
-const apiUrl = import.meta.env.VITE_API_URL ?? '';
+const API_ROLE_KEY = 'ecopraia:role';
+const API_USER_ID_KEY = 'ecopraia:userId';
+const apiUrl = '/api';
 
 export const api = axios.create({
   baseURL: apiUrl,
@@ -14,14 +16,70 @@ if (storedToken) {
   api.defaults.headers.common.Authorization = `Bearer ${storedToken}`;
 }
 
-export function saveToken(token: string) {
+function extractUserIdFromToken(token: string): string | null {
+  try {
+    const [, payload] = token.split('.');
+    if (!payload) return null;
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const decoded = JSON.parse(atob(normalized));
+    return decoded?.id?.toString() ?? decoded?.userId?.toString() ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveToken(token: string, role?: string, userId?: string | number | null) {
   localStorage.setItem(API_TOKEN_KEY, token);
+  if (role) {
+    localStorage.setItem(API_ROLE_KEY, role);
+  } else {
+    localStorage.removeItem(API_ROLE_KEY);
+  }
+
+  const resolvedUserId = userId ?? extractUserIdFromToken(token);
+  if (resolvedUserId) {
+    localStorage.setItem(API_USER_ID_KEY, String(resolvedUserId));
+  } else {
+    localStorage.removeItem(API_USER_ID_KEY);
+  }
+
   api.defaults.headers.common.Authorization = `Bearer ${token}`;
 }
 
 export function clearToken() {
   localStorage.removeItem(API_TOKEN_KEY);
+  localStorage.removeItem(API_ROLE_KEY);
+  localStorage.removeItem(API_USER_ID_KEY);
   delete api.defaults.headers.common.Authorization;
+}
+
+export function clearAuth() {
+  clearToken();
+}
+
+export function getToken(): string | null {
+  return localStorage.getItem(API_TOKEN_KEY);
+}
+
+export function getRole(): string | null {
+  return localStorage.getItem(API_ROLE_KEY);
+}
+
+export function getUserId(): string | null {
+  return localStorage.getItem(API_USER_ID_KEY);
+}
+
+function normalizeRole(role: string | null | undefined): string | null {
+  return role?.trim().toUpperCase() ?? null;
+}
+
+export function isAdmin(): boolean {
+  const role = normalizeRole(getRole());
+  return role === 'ROLE_ADMIN' || role === 'ADMIN';
+}
+
+export function isAuthenticated(): boolean {
+  return getToken() !== null;
 }
 
 // Lixeiras
@@ -51,8 +109,13 @@ async function getUsuario(params: ApiTypes.Usuarioget) {
 }
 
 async function postUsuario(data: ApiTypes.UsuarioPost) {
-  const response = await api.post('/usuarios', data);
-  return response.data;
+  try {
+    const response = await api.post('/usuarios', data);
+    return response.data;
+  } catch (error: any) {
+    const message = error?.response?.data || error?.message || 'Erro ao criar usuário.';
+    throw new Error(message);
+  }
 }
 
 async function register(data: ApiTypes.UsuarioPost) {
@@ -136,6 +199,39 @@ async function login(data: ApiTypes.loginPost) {
   return response.data as ApiTypes.LoginResponse;
 }
 
+async function getCurrentUser() {
+  return await api.get<ApiTypes.CurrentUserResponse>('/usuarios/me');
+}
+
+export async function fetchCurrentUserRole(): Promise<string | null> {
+  try {
+    const response = await getCurrentUser();
+    const role = response.data?.role;
+    if (!role || typeof role !== 'string') {
+      return null;
+    }
+
+    const normalized = role.trim().toUpperCase();
+    localStorage.setItem(API_ROLE_KEY, normalized);
+    return normalized;
+  } catch {
+    return null;
+  }
+}
+
+// Geolocalização e rotas
+async function getLixeiraDistancia(id: number, lat: number, lng: number) {
+  return await api.get(`/lixeiras/${id}/distancia`, { params: { lat, lng } });
+}
+
+async function getLixeirasProximas(lat: number, lng: number) {
+  return await api.get('/lixeiras/proximas', { params: { lat, lng } });
+}
+
+async function getLixeiraRota(id: number, lat: number, lng: number, modo: 'A_PE' | 'BICICLETA' | 'CARRO' = 'A_PE') {
+  return await api.get(`/lixeiras/${id}/rota`, { params: { lat, lng, modo } });
+}
+
 export {
   // Lixeiras
   getLixeiras,
@@ -143,6 +239,9 @@ export {
   putLixeiras,
   deleteLixeiras,
   getLixeirasAll,
+  getLixeiraDistancia,
+  getLixeirasProximas,
+  getLixeiraRota,
   // Usuários
   getUsuario,
   postUsuario,

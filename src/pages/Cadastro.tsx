@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Leaf } from "lucide-react";
-import { register } from "@/lib/api";
+import { register, isAuthenticated } from "@/lib/api";
 import beachHero from "@/assets/beach-hero.jpeg";
 import "./Cadastro.css";
 
@@ -24,6 +24,13 @@ const schema = z
 
 const Signup = () => {
   const navigate = useNavigate();
+
+  // Se já está logado, redireciona para perfil
+  if (isAuthenticated()) {
+    navigate("/perfil", { replace: true });
+    return null;
+  }
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -41,11 +48,15 @@ const Signup = () => {
     try {
       schema.parse({ name, email, password, confirm });
 
-      await register({ nome: name, email, senha: password });
+      await register({
+        nome: name,
+        email,
+        senha: password,
+      });
       navigate("/login");
     } catch (err) {
       if (err instanceof z.ZodError) {
-        setError(err.errors[0].message);
+        setError(err.message);
       } else if (err instanceof Error) {
         setError(err.message || "Falha ao criar conta");
       } else {

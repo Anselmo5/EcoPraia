@@ -4,7 +4,7 @@ import { z } from "zod";
 import { LogOut } from "lucide-react";
 import { Leaf } from "lucide-react";
 import beachHero from "@/assets/beach-hero.jpeg";
-import { login, saveToken } from "@/lib/api";
+import { login, saveToken, isAuthenticated, fetchCurrentUserRole } from "@/lib/api";
 import "./Login.css";
 
 const schema = z.object({
@@ -19,7 +19,11 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-
+  // Se já está logado, redireciona para perfil
+  if (isAuthenticated()) {
+    navigate("/perfil", { replace: true });
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,20 +31,14 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // Validate
       schema.parse({ email, password });
-
-      // Login
-      const response = await login({ email, senha: password });
-
-      // Save token
+      const response = await login({ nome: "", email, senha: password });
       saveToken(response.token);
-
-      // Redirect to profile
+      await fetchCurrentUserRole();
       navigate("/perfil");
     } catch (err) {
       if (err instanceof z.ZodError) {
-        setError(err.errors[0].message);
+        setError(err.message || "Error");
       } else if (err instanceof Error) {
         setError(err.message || "Falha ao fazer login");
       } else {

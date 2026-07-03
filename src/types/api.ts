@@ -20,6 +20,13 @@ export interface UsuarioPost {
   senha: string;
 }
 
+export interface CurrentUserResponse {
+  id: number;
+  nome: string;
+  email: string;
+  role: string;
+}
+
 // lixeiras
 
 export interface lixeiraGet {
@@ -118,10 +125,20 @@ export interface AtualizarSenhaAdministradorDTO {
 }
 
 export interface loginPost {
+  nome: string;
   email: string;
   senha: string;
 }
 
 export interface LoginResponse {
   token: string;
+  role?: string;
+  id?: number;
+}
+
+export interface UserData {
+  id: number;
+  nome: string;
+  email: string;
+  role: string;
 }
