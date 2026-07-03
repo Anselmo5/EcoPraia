@@ -1,9 +1,12 @@
+// api.ts
+
 import axios from 'axios';
 import * as ApiTypes from '../types/api';
 
 const API_TOKEN_KEY = 'ecopraia:token';
 const API_ROLE_KEY = 'ecopraia:role';
 const API_USER_ID_KEY = 'ecopraia:userId';
+const API_EMAIL_KEY = 'ecopraia:email';
 const apiUrl = '/api';
 
 export const api = axios.create({
@@ -16,24 +19,155 @@ if (storedToken) {
   api.defaults.headers.common.Authorization = `Bearer ${storedToken}`;
 }
 
+/**
+ * Decodifica o payload de um JWT (base64url) e tenta extrair o id do usuário.
+ *
+ * CORREÇÃO: base64url não tem padding ('='), e o atob() nativo pode falhar
+ * silenciosamente (cai no catch) se o payload não tiver múltiplo de 4
+ * caracteres. Também foi adicionado o decodeURIComponent/escape para lidar
+ * corretamente com caracteres acentuados (ex: nome "João") sem corromper o
+ * JSON. Por fim, a lista de possíveis nomes de claim foi ampliada e um log
+ * temporário foi adicionado para você identificar o nome exato da claim
+ * que o seu back-end está usando.
+ */
 function extractUserIdFromToken(token: string): string | null {
   try {
     const [, payload] = token.split('.');
     if (!payload) return null;
-    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
-    const decoded = JSON.parse(atob(normalized));
-    return decoded?.id?.toString() ?? decoded?.userId?.toString() ?? null;
-  } catch {
+
+    let normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    while (normalized.length % 4 !== 0) {
+      normalized += '=';
+    }
+
+    const decoded = JSON.parse(decodeURIComponent(escape(atob(normalized))));
+
+    // TEMPORÁRIO: veja no console quais claims o token realmente tem
+    // e depois remova esse log.
+    console.log('[extractUserIdFromToken] claims decodificadas:', decoded);
+
+    const sub = decoded?.sub?.toString();
+    const subIsNumeric = typeof sub === 'string' && /^[0-9]+$/.test(sub);
+
+    return (
+      decoded?.id?.toString() ??
+      decoded?.userId?.toString() ??
+      decoded?.idUsuario?.toString() ??
+      (subIsNumeric ? sub : null)
+    );
+  } catch (err) {
+    console.error('[extractUserIdFromToken] falha ao decodificar token:', err);
     return null;
   }
 }
 
-export function saveToken(token: string, role?: string, userId?: string | number | null) {
+/**
+ * Extrai um nome de role a partir de formatos diferentes que a API pode
+ * devolver:
+ *  - string simples: "ROLE_ADMIN"
+ *  - array de authorities do Spring Security: [{ authority: "ROLE_ADMIN" }]
+ *  - array de strings: ["ROLE_ADMIN", "ROLE_USER"]
+ *  - array de objetos com outros nomes de campo: [{ role: "..." }], [{ name: "..." }]
+ * Se houver mais de uma role, prioriza qualquer uma que contenha "ADMIN".
+ */
+function extractRoleString(raw: any): string | null {
+  if (!raw) return null;
+
+  if (typeof raw === 'string') return raw;
+
+  if (Array.isArray(raw)) {
+    const names = raw
+      .map((item: any) => {
+        if (typeof item === 'string') return item;
+        return item?.authority ?? item?.role ?? item?.name ?? null;
+      })
+      .filter((name: string | null): name is string => Boolean(name));
+
+    if (names.length === 0) return null;
+
+    return names.find((name) => name.toUpperCase().includes('ADMIN')) ?? names[0];
+  }
+
+  return null;
+}
+
+function parseCurrentUserResponse(data: any) {
+  const userObject =
+    data?.usuario && typeof data.usuario === 'object'
+      ? data.usuario
+      : data;
+
+  const idValue =
+    userObject?.id ??
+    userObject?.userId ??
+    userObject?.idUsuario ??
+    null;
+
+  const emailValue =
+    userObject?.email ??
+    (typeof data?.usuario === 'string' ? data.usuario : null);
+
+  const rawRole =
+    data?.role ??
+    data?.roles ??
+    data?.authorities ??
+    userObject?.role ??
+    userObject?.roles ??
+    userObject?.authorities ??
+    null;
+
+  return {
+    id: idValue != null ? String(idValue) : null,
+    email: typeof emailValue === 'string' ? emailValue.trim() : null,
+    role: extractRoleString(rawRole),
+  };
+}
+
+async function fetchCurrentUserInfo(): Promise<{
+  id: string | null;
+  email: string | null;
+  role: string | null;
+} | null> {
+  try {
+    const response = await getCurrentUser();
+    const parsed = parseCurrentUserResponse(response.data);
+
+    if (parsed.email) {
+      localStorage.setItem(API_EMAIL_KEY, parsed.email);
+    }
+    if (parsed.id) {
+      localStorage.setItem(API_USER_ID_KEY, String(parsed.id));
+    }
+    if (parsed.role) {
+      localStorage.setItem(API_ROLE_KEY, parsed.role.trim().toUpperCase());
+    }
+
+    return parsed;
+  } catch (error) {
+    console.error('[fetchCurrentUserInfo] erro ao buscar usuário atual:', error);
+    return null;
+  }
+}
+
+export function saveToken(
+  token: string,
+  role?: any,
+  userId?: string | number | null,
+  email?: string | null
+) {
   localStorage.setItem(API_TOKEN_KEY, token);
-  if (role) {
-    localStorage.setItem(API_ROLE_KEY, role);
+
+  const normalizedRole = extractRoleString(role);
+  if (normalizedRole) {
+    localStorage.setItem(API_ROLE_KEY, normalizedRole.trim().toUpperCase());
   } else {
     localStorage.removeItem(API_ROLE_KEY);
+  }
+
+  if (email) {
+    localStorage.setItem(API_EMAIL_KEY, email.trim());
+  } else {
+    localStorage.removeItem(API_EMAIL_KEY);
   }
 
   const resolvedUserId = userId ?? extractUserIdFromToken(token);
@@ -41,6 +175,11 @@ export function saveToken(token: string, role?: string, userId?: string | number
     localStorage.setItem(API_USER_ID_KEY, String(resolvedUserId));
   } else {
     localStorage.removeItem(API_USER_ID_KEY);
+    console.warn(
+      '[saveToken] Não foi possível resolver o id do usuário nem pelo ' +
+        'parâmetro userId, nem pelo token JWT. O sidebar e a troca de ' +
+        'senha vão falhar até isso ser corrigido.'
+    );
   }
 
   api.defaults.headers.common.Authorization = `Bearer ${token}`;
@@ -50,6 +189,7 @@ export function clearToken() {
   localStorage.removeItem(API_TOKEN_KEY);
   localStorage.removeItem(API_ROLE_KEY);
   localStorage.removeItem(API_USER_ID_KEY);
+  localStorage.removeItem(API_EMAIL_KEY);
   delete api.defaults.headers.common.Authorization;
 }
 
@@ -65,6 +205,10 @@ export function getRole(): string | null {
   return localStorage.getItem(API_ROLE_KEY);
 }
 
+export function getUserEmail(): string | null {
+  return localStorage.getItem(API_EMAIL_KEY);
+}
+
 export function getUserId(): string | null {
   return localStorage.getItem(API_USER_ID_KEY);
 }
@@ -73,9 +217,20 @@ function normalizeRole(role: string | null | undefined): string | null {
   return role?.trim().toUpperCase() ?? null;
 }
 
+const ADMIN_ROLE_VALUES = new Set([
+  'ADMIN',
+  'ROLE_ADMIN',
+  'ADMINISTRADOR',
+  'ROLE_ADMINISTRADOR',
+]);
+
 export function isAdmin(): boolean {
   const role = normalizeRole(getRole());
-  return role === 'ROLE_ADMIN' || role === 'ADMIN';
+  if (!role) return false;
+  if (ADMIN_ROLE_VALUES.has(role)) return true;
+  // fallback: qualquer role que contenha "ADMIN" no texto
+  // (cobre variações que a gente ainda não previu, tipo "ROLE_ADMINISTRADOR_GERAL")
+  return role.includes('ADMIN');
 }
 
 export function isAuthenticated(): boolean {
@@ -145,7 +300,7 @@ async function postInformativos(data: ApiTypes.informativosPost) {
 
 async function putInformativos(id: string, data: ApiTypes.informativosPut) {
   return await api.put(`/informativos/${id}`, data);
-} 
+}
 
 async function deleteInformativos(params: ApiTypes.informativosDelete) {
   return await api.delete(`/informativos/${params.id}`);
@@ -205,16 +360,20 @@ async function getCurrentUser() {
 
 export async function fetchCurrentUserRole(): Promise<string | null> {
   try {
-    const response = await getCurrentUser();
-    const role = response.data?.role;
-    if (!role || typeof role !== 'string') {
-      return null;
+    const parsed = await fetchCurrentUserInfo();
+    const role = parsed?.role ?? null;
+
+    if (!role) {
+      console.warn(
+        '[fetchCurrentUserRole] Não foi possível extrair uma role reconhecível ' +
+          'da resposta de GET /usuarios/me:',
+        parsed
+      );
     }
 
-    const normalized = role.trim().toUpperCase();
-    localStorage.setItem(API_ROLE_KEY, normalized);
-    return normalized;
-  } catch {
+    return role;
+  } catch (error) {
+    console.error('[fetchCurrentUserRole] erro ao buscar role:', error);
     return null;
   }
 }
@@ -268,5 +427,5 @@ export {
   getHistoricoAll,
   // Auth
   login,
+  fetchCurrentUserInfo,
 };
-

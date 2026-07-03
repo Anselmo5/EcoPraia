@@ -73,6 +73,8 @@ const DEFAULT_WASTE_TYPE_COLORS: Record<string, string> = {
   Metal: "#4e8d39",
 };
 
+const STORAGE_KEY_LIXEIRA_TYPES = "ecopraia:lixeira-types";
+
 const DEFAULT_WASTE_TYPES: WasteTypeOption[] = [
   { id: 1, nomeTipo: "Plástico", cor: DEFAULT_WASTE_TYPE_COLORS.Plástico },
   { id: 2, nomeTipo: "Vidro", cor: DEFAULT_WASTE_TYPE_COLORS.Vidro },
@@ -81,6 +83,53 @@ const DEFAULT_WASTE_TYPES: WasteTypeOption[] = [
   { id: 5, nomeTipo: "Metal", cor: DEFAULT_WASTE_TYPE_COLORS.Metal },
 ];
 
+function loadSavedLixeiraTypes(): Record<string, string[]> {
+  const raw = localStorage.getItem(STORAGE_KEY_LIXEIRA_TYPES);
+  if (!raw) return {};
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return Object.fromEntries(
+        Object.entries(parsed).map(([key, value]) => [
+          key,
+          Array.isArray(value) ? value.filter((item) => typeof item === "string") : [],
+        ])
+      );
+    }
+  } catch {
+    // ignore invalid saved state
+  }
+
+  return {};
+}
+
+function persistSavedLixeiraTypes(data: Record<string, string[]>) {
+  localStorage.setItem(STORAGE_KEY_LIXEIRA_TYPES, JSON.stringify(data));
+}
+
+function saveLixeiraTypes(id: string, types: string[]) {
+  const current = loadSavedLixeiraTypes();
+  if (types.length > 0) {
+    current[id] = types;
+  } else {
+    delete current[id];
+  }
+  persistSavedLixeiraTypes(current);
+}
+
+function removeSavedLixeiraTypes(id: string) {
+  const current = loadSavedLixeiraTypes();
+  if (id in current) {
+    delete current[id];
+    persistSavedLixeiraTypes(current);
+  }
+}
+
+function getSavedLixeiraTypes(id: string): string[] | undefined {
+  return loadSavedLixeiraTypes()[id];
+}
+
 /**
  * Tenta localizar o array de tipos de resíduo dentro do objeto vindo do
  * backend, testando alguns nomes de campo comuns. Se não encontrar nada
@@ -88,7 +137,26 @@ const DEFAULT_WASTE_TYPES: WasteTypeOption[] = [
  * console com o item bruto, pra facilitar identificar o formato real
  * que a API está devolvendo.
  */
-function extractWasteTypeNames(item: any): string[] {
+function extractWasteTypeNames(item: any, wasteTypes: WasteTypeOption[]): string[] {
+  const normalizeType = (tipo: any): string | null => {
+    if (tipo == null) return null;
+    if (typeof tipo === "string") return tipo;
+    if (typeof tipo === "number") {
+      return wasteTypes.find((type) => type.id === tipo)?.nomeTipo ?? String(tipo);
+    }
+    if (typeof tipo === "object") {
+      const candidateName = tipo?.nomeTipo ?? tipo?.nome ?? tipo?.tipo ?? null;
+      if (candidateName) return candidateName;
+      if (tipo?.id != null) {
+        const id = Number(tipo.id);
+        if (!Number.isNaN(id)) {
+          return wasteTypes.find((type) => type.id === id)?.nomeTipo ?? String(id);
+        }
+      }
+    }
+    return null;
+  };
+
   const candidateArrays: any[] = [
     item?.informativosTipos,
     item?.tipos,
@@ -100,30 +168,58 @@ function extractWasteTypeNames(item: any): string[] {
   const source = candidateArrays[0] ?? [];
 
   const names = source
-    .map((tipo: any) => {
-      if (typeof tipo === "string") return tipo;
-      return tipo?.nomeTipo ?? tipo?.nome ?? tipo?.tipo ?? null;
-    })
+    .map(normalizeType)
     .filter((name: string | null): name is string => Boolean(name));
 
+  if (names.length > 0) {
+    return names;
+  }
+
+  const fallbackIds = Array.isArray(item?.informativosTiposIds)
+    ? item.informativosTiposIds
+    : Array.isArray(item?.informativosTipos)
+      ? item.informativosTipos
+      : [];
+
+  const resolvedNames = fallbackIds
+    .map((maybeId: any) => Number(maybeId))
+    .filter((id: number) => !Number.isNaN(id))
+    .map((id: number) =>
+      wasteTypes.find((type) => type.id === id)?.nomeTipo ?? String(id)
+    );
+
+  if (resolvedNames.length > 0) {
+    return resolvedNames;
+  }
+
   if (
-    names.length === 0 &&
-    Array.isArray(item?.informativosTiposIds) &&
-    item.informativosTiposIds.length > 0
+    (Array.isArray(item?.informativosTiposIds) && item.informativosTiposIds.length > 0) ||
+    (Array.isArray(item?.informativosTipos) && item.informativosTipos.length > 0)
   ) {
     console.warn(
-      "[MapsPage] Lixeira veio com informativosTiposIds mas sem os objetos de tipo " +
-        "resolvidos (nomeTipo) pelo backend. Confira o formato exato da resposta de " +
+      "[MapsPage] Lixeira veio com informativosTipos/informativosTiposIds mas não foi possível resolver os nomes dos tipos. Confira o formato exato da resposta de " +
         "GET /lixeiras/todos e ajuste extractWasteTypeNames() se o campo tiver outro nome:",
-      item
+      item,
+      "item informativosTipos:",
+      item?.informativosTipos,
+      "item informativosTiposIds:",
+      item?.informativosTiposIds,
+      "available wasteTypes:",
+      wasteTypes
     );
   }
 
   return names;
 }
 
-function mapBackendLixeiraToTrashLocation(item: any): TrashLocation {
-  const types = extractWasteTypeNames(item);
+function mapBackendLixeiraToTrashLocation(
+  item: any,
+  wasteTypes: WasteTypeOption[],
+  savedTypesById: Record<string, string[]> = {}
+): TrashLocation {
+  const resolvedTypes = extractWasteTypeNames(item, wasteTypes);
+  const savedTypes = item?.id ? savedTypesById[String(item.id)] ?? [] : [];
+  const types = resolvedTypes.length > 0 ? resolvedTypes : savedTypes;
 
   return {
     id: String(item?.id ?? Date.now()),
@@ -320,6 +416,16 @@ export default function MapsPage() {
   const [wasteTypes, setWasteTypes] = useState<WasteTypeOption[]>(DEFAULT_WASTE_TYPES);
   const [selectedTypeIds, setSelectedTypeIds] = useState<number[]>([]);
   const [isAuthenticated_, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    if (selectedTrash) {
+      console.log(
+        "[MapsPage] selectedTrash.types:",
+        selectedTrash.types,
+       
+      );
+    }
+  }, [selectedTrash, wasteTypes]);
   const [isAdmin_, setIsAdmin] = useState(false);
   const [isRoutingLoading, setIsRoutingLoading] = useState(false);
   const [isGeocodingAddress, setIsGeocodingAddress] = useState(false);
@@ -462,21 +568,37 @@ export default function MapsPage() {
         const backendLixeiras = Array.isArray(lixeirasResponse.data)
           ? lixeirasResponse.data
           : [];
-        const mappedLixeiras = backendLixeiras.map(mapBackendLixeiraToTrashLocation);
-        setServerTrashes(mappedLixeiras);
-
         const backendInformativos = Array.isArray(informativosResponse.data)
           ? informativosResponse.data
           : [];
 
-        if (backendInformativos.length > 0) {
-          const normalizedTypes = backendInformativos.map((item: any) => ({
-            id: Number(item?.id),
-            nomeTipo: item?.nomeTipo ?? "Tipo",
-            cor: item?.cor ?? DEFAULT_WASTE_TYPE_COLORS[item?.nomeTipo] ?? "#64748b",
-          }));
-          setWasteTypes(normalizedTypes);
-        }
+        console.log("[MapsPage] backendLixeiras raw:", backendLixeiras);
+        console.log("[MapsPage] backendInformativos raw:", backendInformativos);
+        console.log(
+          "[MapsPage] first lixeira fields:",
+          backendLixeiras[0] ? Object.keys(backendLixeiras[0]) : null,
+          "informativosTipos:",
+          backendLixeiras[0]?.informativosTipos,
+          "informativosTiposIds:",
+          backendLixeiras[0]?.informativosTiposIds
+        );
+
+        const savedTypesById = loadSavedLixeiraTypes();
+
+        const normalizedTypes = backendInformativos.length > 0
+          ? backendInformativos.map((item: any) => ({
+              id: Number(item?.id),
+              nomeTipo: item?.nomeTipo ?? "Tipo",
+              cor: item?.cor ?? DEFAULT_WASTE_TYPE_COLORS[item?.nomeTipo] ?? "#64748b",
+            }))
+          : DEFAULT_WASTE_TYPES;
+
+        setWasteTypes(normalizedTypes);
+
+        const mappedLixeiras = backendLixeiras.map(item =>
+          mapBackendLixeiraToTrashLocation(item, normalizedTypes, savedTypesById)
+        );
+        setServerTrashes(mappedLixeiras);
       } catch (error) {
         console.error("Erro ao carregar lixeiras do backend:", error);
       }
@@ -1080,9 +1202,7 @@ export default function MapsPage() {
     try {
       await deleteLixeiras({ id: editingTrashId });
 
-      setServerTrashes(current => current.filter(item => item.id !== editingTrashId));
-      setExtraTrashes(current => current.filter(item => item.id !== editingTrashId));
-
+        removeSavedLixeiraTypes(editingTrashId);
       setSelectedTrash(null);
       setShowRouting(false);
       clearRoute();
@@ -1145,6 +1265,8 @@ export default function MapsPage() {
           informativosTiposIds: selectedTypeIds,
         });
 
+        saveLixeiraTypes(editingTrashId, selectedTypes);
+
         setServerTrashes(current =>
           current.map(item =>
             item.id === editingTrashId
@@ -1176,9 +1298,11 @@ export default function MapsPage() {
         });
 
         const createdId = createdResponse?.data?.id;
+        const createdKey = createdId != null ? String(createdId) : String(Date.now());
+        saveLixeiraTypes(createdKey, selectedTypes);
 
         const saved: TrashLocation = {
-          id: createdId != null ? String(createdId) : String(Date.now()),
+          id: createdKey,
           lat: Number(formData.lat),
           lng: Number(formData.lng),
           name: selectedTypes.length > 0 ? `Lixeira ${selectedTypes.join(" / ")}` : "Lixeira cadastrada",

@@ -1,8 +1,8 @@
 import { User, LogOut, Menu, X, Trash2 } from "lucide-react";
 
-import { useState, useEffect, useRef, use } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { clearAuth, getUsuario } from "@/lib/api";
+import { clearAuth, getUsuario, getAdministrador, getUserEmail, getUserId, isAdmin, fetchCurrentUserInfo } from "@/lib/api";
 import "./ProfileSidebar.css";
 
 interface ProfileSidebarProps {
@@ -56,45 +56,65 @@ export default function ProfileSidebar({
     return () => window.removeEventListener("resize", updateWidth);
   }, []);
 
-
-function decodeJWT(token: string): any {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-    return JSON.parse(jsonPayload);
-  } catch (error) {
-    console.error('Erro ao decodificar JWT:', error);
-    return null;
-  }
-}
-
   useEffect(() => {
-    const token = localStorage.getItem('ecopraia:token');
-    if (token) {
-      const decoded = decodeJWT(token);
-      if (decoded && decoded.sub) {
-        const userId = decoded.id;
-        if (userId) {
-          getUsuario({ id: userId })
-            .then((data: any) => {
-              setFirstName(data.nome || '');
-              setLastName(data.sobrenome || '');
-              setEmail(data.email || '');
-            })
-            .catch((error) => {
-              console.error('Erro ao buscar usuário:', error);
-              setEmail(decoded.sub || '');
-            });
-        } else {
-          setEmail(decoded.sub || '');
-        }
+    const userId = getUserId();
+    const storedEmail = getUserEmail();
+    setEmail(storedEmail || '');
+
+    if (!userId) {
+      void fetchCurrentUserInfo().then((userInfo) => {
+        if (!userInfo?.id) return;
+
+        const fallbackName = (userInfo.email || '')
+          .split('@')[0]
+          .replace(/[._-]+/g, ' ')
+          .replace(/\b\w/g, (char) => char.toUpperCase());
+
+        setFirstName(fallbackName);
+        setLastName('');
+        setEmail(userInfo.email || storedEmail || '');
+      });
+
+      if (storedEmail) {
+        const fallbackName = storedEmail
+          .split('@')[0]
+          .replace(/[._-]+/g, ' ')
+          .replace(/\b\w/g, (char) => char.toUpperCase());
+        setFirstName(fallbackName);
       }
+      setLastName('');
+      if (!storedEmail) {
+        console.warn(
+          "[ProfileSidebar] getUserId() não retornou um id e não há email armazenado. O perfil não pôde ser carregado completamente."
+        );
+      }
+      return;
+    }
+
+    // Admin e usuário comum são entidades separadas no backend
+    // (/administradores/{id} vs /usuarios/{id}) — usa a rota certa.
+    if (isAdmin()) {
+      getAdministrador({ id: userId })
+        .then((res: any) => {
+          const data = res?.data ?? {};
+          setFirstName(data.nome || '');
+          setLastName('');
+          setEmail(data.email || storedEmail || '');
+        })
+        .catch((error) => {
+          console.error('Erro ao buscar administrador:', error);
+        });
+    } else {
+      getUsuario({ id: userId })
+        .then((res: any) => {
+          const data = res?.data ?? {};
+          setFirstName(data.nome || '');
+          setLastName(data.sobrenome || '');
+          setEmail(data.email || storedEmail || '');
+        })
+        .catch((error) => {
+          console.error('Erro ao buscar usuário:', error);
+        });
     }
   }, []);
 

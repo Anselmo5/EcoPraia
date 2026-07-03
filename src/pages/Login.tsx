@@ -4,7 +4,7 @@ import { z } from "zod";
 import { LogOut } from "lucide-react";
 import { Leaf } from "lucide-react";
 import beachHero from "@/assets/beach-hero.jpeg";
-import { login, saveToken, isAuthenticated, fetchCurrentUserRole } from "@/lib/api";
+import { login, saveToken, isAuthenticated, fetchCurrentUserInfo } from "@/lib/api";
 import "./Login.css";
 
 const schema = z.object({
@@ -33,8 +33,26 @@ export default function Login() {
     try {
       schema.parse({ email, password });
       const response = await login({ nome: "", email, senha: password });
-      saveToken(response.token);
-      await fetchCurrentUserRole();
+
+      // O /auth/login já pode devolver role/id diretamente — usamos isso
+      // como fonte principal, já que é mais confiável que uma segunda
+      // chamada. Só caímos no fetchCurrentUserRole() como reforço/fallback
+      // caso o login não traga a role.
+      saveToken(response.token, response.role, response.id, email);
+
+      const fallbackUser = await fetchCurrentUserInfo();
+      if (!response.role && !fallbackUser?.role) {
+        console.warn(
+          "[Login] Nem /auth/login nem /usuarios/me retornaram role. Verifique o formato da resposta do backend."
+        );
+      }
+
+      if (!response.id && !fallbackUser?.id) {
+        console.warn(
+          "[Login] Nem /auth/login nem /usuarios/me retornaram id do usuário. Atualizações de perfil e senha podem falhar."
+        );
+      }
+
       navigate("/perfil");
     } catch (err) {
       if (err instanceof z.ZodError) {

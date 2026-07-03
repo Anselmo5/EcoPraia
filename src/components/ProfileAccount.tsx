@@ -3,31 +3,32 @@
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { Eye, EyeOff } from "lucide-react";
-import { getUsuario, putUsuario, patchUsuarioSenha } from "@/lib/api";
+import {
+  getUsuario,
+  putUsuario,
+  patchUsuarioSenha,
+  getAdministrador,
+  putAdministrador,
+  patchAdministradorSenha,
+  getUserEmail,
+  getUserId,
+  isAdmin,
+  fetchCurrentUserInfo,
+} from "@/lib/api";
 import './ProfileAccount.css';
-
-function decodeJWT(token: string): any {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-    return JSON.parse(jsonPayload);
-  } catch (error) {
-    console.error('Erro ao decodificar JWT:', error);
-    return null;
-  }
-}
 
 export default function ProfileAccount() {
   const [userId, setUserId] = useState<string | null>(null);
+  const [isAdminAccount, setIsAdminAccount] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  // Campos extras exigidos pelo DTO de administrador (admistradoresPut).
+  // Não aparecem no formulário, só são preservados ao salvar pra não
+  // sobrescrever com vazio.
+  const [instituicao, setInstituicao] = useState("");
+  const [cargo, setCargo] = useState("");
+
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -43,31 +44,70 @@ export default function ProfileAccount() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('ecopraia:token');
-    if (token) {
-      const decoded = decodeJWT(token);
-      if (decoded && decoded.sub) {
-        const id = decoded.id;
-        if (id) {
-          setUserId(String(id));
-          getUsuario({ id })
-            .then((data: any) => {
-              setFirstName(data.nome || '');
-              setLastName('');
-              // A senha nunca é (e não deve ser) retornada pelo back-end por
-              // segurança — o campo "Senha Atual" fica vazio de propósito,
-              // o próprio usuário deve digitá-la para confirmar identidade
-              // antes de trocar a senha.
-              setEmail(data.email || '');
-            })
-            .catch((error) => {
-              console.error('Erro ao buscar usuário:', error);
-              setEmail(decoded.sub || '');
-            });
-        } else {
-          setEmail(decoded.sub || '');
+    const id = getUserId();
+    const admin = isAdmin();
+    const storedEmail = getUserEmail();
+    const storedRole = admin ? 'ADMIN' : null;
+    setUserId(id);
+    setIsAdminAccount(admin);
+    setEmail(storedEmail || '');
+
+    if (!id || !storedRole) {
+      void fetchCurrentUserInfo().then((userInfo) => {
+        if (!userInfo?.id) return;
+
+        setUserId(String(userInfo.id));
+        setIsAdminAccount(userInfo.role ? userInfo.role.toUpperCase().includes('ADMIN') : admin);
+        if (!storedEmail && userInfo.email) {
+          setEmail(userInfo.email);
         }
+      });
+
+      if (storedEmail) {
+        const fallbackName = storedEmail
+          .split('@')[0]
+          .replace(/[._-]+/g, ' ')
+          .replace(/\b\w/g, (char) => char.toUpperCase());
+        setFirstName(fallbackName);
       }
+      setLastName('');
+      if (!storedEmail) {
+        console.warn(
+          "[ProfileAccount] getUserId() não retornou um id e não há email armazenado. O perfil não pôde ser carregado completamente."
+        );
+      }
+      return;
+    }
+
+    if (admin) {
+      // Conta de administrador vive em /administradores, não em /usuarios
+      getAdministrador({ id })
+        .then((res: any) => {
+          const data = res?.data ?? {};
+          setFirstName(data.nome || '');
+          setLastName('');
+          setEmail(data.email || storedEmail || '');
+          setInstituicao(data.instituicao || '');
+          setCargo(data.cargo || '');
+        })
+        .catch((error) => {
+          console.error('Erro ao buscar administrador:', error);
+        });
+    } else {
+      getUsuario({ id })
+        .then((res: any) => {
+          const data = res?.data ?? {};
+          setFirstName(data.nome || '');
+          setLastName('');
+          // A senha nunca é (e não deve ser) retornada pelo back-end por
+          // segurança — o campo "Senha Atual" fica vazio de propósito,
+          // o próprio usuário deve digitá-la para confirmar identidade
+          // antes de trocar a senha.
+          setEmail(data.email || storedEmail || '');
+        })
+        .catch((error) => {
+          console.error('Erro ao buscar usuário:', error);
+        });
     }
   }, []);
 
@@ -95,10 +135,19 @@ export default function ProfileAccount() {
     setIsSaving(true);
 
     try {
-      await putUsuario(userId, {
-        nome: firstName.trim(),
-        email: email.trim(),
-      });
+      if (isAdminAccount) {
+        await putAdministrador(userId, {
+          nome: firstName.trim(),
+          email: email.trim(),
+          instituicao,
+          cargo,
+        });
+      } else {
+        await putUsuario(userId, {
+          nome: firstName.trim(),
+          email: email.trim(),
+        });
+      }
 
       Swal.fire({
         title: "Sucesso!",
@@ -159,9 +208,14 @@ export default function ProfileAccount() {
     setIsChangingPassword(true);
 
     try {
-      // OBS: o back-end (AtualizarSenhaUsuarioDTO) só recebe a nova senha,
-      // não valida a senha atual — por isso currentPassword não é enviada.
-      await patchUsuarioSenha(userId, { senha: newPassword });
+      // OBS: o back-end (AtualizarSenhaUsuarioDTO / AtualizarSenhaAdministradorDTO)
+      // só recebe a nova senha, não valida a senha atual — por isso
+      // currentPassword não é enviada.
+      if (isAdminAccount) {
+        await patchAdministradorSenha(userId, { senha: newPassword });
+      } else {
+        await patchUsuarioSenha(userId, { senha: newPassword });
+      }
 
       Swal.fire({
         title: "Sucesso!",
