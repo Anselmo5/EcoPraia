@@ -1,5 +1,3 @@
-
-
 import axios from 'axios';
 import * as ApiTypes from '../types/api';
 
@@ -19,17 +17,6 @@ if (storedToken) {
   api.defaults.headers.common.Authorization = `Bearer ${storedToken}`;
 }
 
-
-
-
-
-
-
-
-
-
-
-
 function extractUserIdFromToken(token: string): string | null {
   try {
     const [, payload] = token.split('.');
@@ -42,8 +29,6 @@ function extractUserIdFromToken(token: string): string | null {
 
     const decoded = JSON.parse(decodeURIComponent(escape(atob(normalized))));
 
-    
-    
     console.log('[extractUserIdFromToken] claims decodificadas:', decoded);
 
     const sub = decoded?.sub?.toString();
@@ -60,15 +45,6 @@ function extractUserIdFromToken(token: string): string | null {
     return null;
   }
 }
-
-
-
-
-
-
-
-
-
 
 function extractRoleString(raw: any): string | null {
   if (!raw) return null;
@@ -228,8 +204,6 @@ export function isAdmin(): boolean {
   const role = normalizeRole(getRole());
   if (!role) return false;
   if (ADMIN_ROLE_VALUES.has(role)) return true;
-  
-  
   return role.includes('ADMIN');
 }
 
@@ -285,8 +259,8 @@ async function deleteUsuario(params: ApiTypes.UsuarioDelete) {
   return await api.delete(`/usuarios/${params.id}`);
 }
 
-async function patchUsuarioSenha(id: string, data: ApiTypes.AtualizarSenhaUsuarioDTO) {
-  return await api.patch(`/usuarios/${id}/senha`, data);
+async function patchUsuarioSenha(data: ApiTypes.AtualizarSenhaUsuarioDTO) {
+  return await api.patch('/usuarios/me/senha', data);
 }
 
 
@@ -392,7 +366,6 @@ async function getLixeiraRota(id: number, lat: number, lng: number, modo: 'A_PE'
 }
 
 export {
-  
   getLixeiras,
   postLixeiras,
   putLixeiras,
@@ -401,31 +374,31 @@ export {
   getLixeiraDistancia,
   getLixeirasProximas,
   getLixeiraRota,
-  
+
   getUsuario,
   postUsuario,
   register,
   putUsuario,
   deleteUsuario,
   patchUsuarioSenha,
-  
+
   getInformativos,
   postInformativos,
   putInformativos,
   deleteInformativos,
   getInformativosAll,
-  
+
   getAdministrador,
   postAdministrador,
   putAdministrador,
   deleteAdministrador,
   patchAdministradorSenha,
-  
+
   postHistorico,
   getHistorico,
   deleteHistorico,
   getHistoricoAll,
-  
+
   login,
   fetchCurrentUserInfo,
 };

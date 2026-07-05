@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { Eye, EyeOff } from "lucide-react";
@@ -23,9 +21,8 @@ export default function ProfileAccount() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  
-  
-  
+
+
   const [instituicao, setInstituicao] = useState("");
   const [cargo, setCargo] = useState("");
 
@@ -54,12 +51,23 @@ export default function ProfileAccount() {
 
     if (!id || !storedRole) {
       void fetchCurrentUserInfo().then((userInfo) => {
-        if (!userInfo?.id) return;
+        if (userInfo?.id) {
+          setUserId(String(userInfo.id));
+        }
 
-        setUserId(String(userInfo.id));
-        setIsAdminAccount(userInfo.role ? userInfo.role.toUpperCase().includes('ADMIN') : admin);
-        if (!storedEmail && userInfo.email) {
-          setEmail(userInfo.email);
+        setIsAdminAccount(userInfo?.role ? userInfo.role.toUpperCase().includes('ADMIN') : admin);
+
+        const resolvedEmail = userInfo?.email || storedEmail || '';
+        if (resolvedEmail) {
+          setEmail(resolvedEmail);
+        }
+
+        if (resolvedEmail) {
+          const fallbackName = resolvedEmail
+            .split('@')[0]
+            .replace(/[._-]+/g, ' ')
+            .replace(/\b\w/g, (char) => char.toUpperCase());
+          setFirstName(fallbackName);
         }
       });
 
@@ -80,7 +88,6 @@ export default function ProfileAccount() {
     }
 
     if (admin) {
-      
       getAdministrador({ id })
         .then((res: any) => {
           const data = res?.data ?? {};
@@ -99,10 +106,6 @@ export default function ProfileAccount() {
           const data = res?.data ?? {};
           setFirstName(data.nome || '');
           setLastName('');
-          
-          
-          
-          
           setEmail(data.email || storedEmail || '');
         })
         .catch((error) => {
@@ -175,10 +178,10 @@ export default function ProfileAccount() {
   };
 
   const handleChangePassword = async () => {
-    if (!userId) {
+    if (isAdminAccount && !userId) {
       Swal.fire({
         title: "Erro",
-        text: "Não foi possível identificar o usuário logado.",
+        text: "Não foi possível identificar o administrador logado.",
         icon: "error",
         confirmButtonColor: "#22c55e",
       });
@@ -208,13 +211,11 @@ export default function ProfileAccount() {
     setIsChangingPassword(true);
 
     try {
-      
-      
-      
+
       if (isAdminAccount) {
-        await patchAdministradorSenha(userId, { senha: newPassword });
+        await patchAdministradorSenha(userId as string, { senha: newPassword });
       } else {
-        await patchUsuarioSenha(userId, { senha: newPassword });
+        await patchUsuarioSenha({ senha: newPassword });
       }
 
       Swal.fire({
@@ -384,7 +385,6 @@ export default function ProfileAccount() {
             </div>
           </div>
 
-          {}
           <div className="profile-field">
             <label>Confirmar Senha</label>
 
@@ -429,7 +429,6 @@ export default function ProfileAccount() {
             onClick={handleChangePassword}
             disabled={
               isChangingPassword ||
-              !currentPassword ||
               !newPassword ||
               !confirmPassword
             }

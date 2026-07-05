@@ -41,6 +41,15 @@ export default function Login() {
       saveToken(response.token, response.role, response.id, email);
 
       const fallbackUser = await fetchCurrentUserInfo();
+      const resolvedRole = fallbackUser?.role ?? response.role ?? null;
+      const resolvedEmail = fallbackUser?.email ?? email;
+
+      if (resolvedRole) {
+        saveToken(response.token, resolvedRole, response.id, resolvedEmail);
+      } else {
+        saveToken(response.token, response.role, response.id, resolvedEmail);
+      }
+
       if (!response.role && !fallbackUser?.role) {
         console.warn(
           "[Login] Nem /auth/login nem /usuarios/me retornaram role. Verifique o formato da resposta do backend."
@@ -132,9 +141,9 @@ export default function Login() {
           </div>
 
           <div className="forgot-password-container">
-            <Link to="/recuperar-senha" className="forgot-password-link">
+            {/* <Link to="/recuperar-senha" className="forgot-password-link">
               Esqueci minha senha
-            </Link>
+            </Link> */}
           </div>
 
           <div className="tab-content-container">

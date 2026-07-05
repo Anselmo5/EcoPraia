@@ -1,4 +1,4 @@
-import { Github, Mail, Linkedin, Heart } from "lucide-react";
+import {Mail,Heart } from "lucide-react";
 import "./Footer.css";
 
 export default function Footer() {
@@ -80,15 +80,7 @@ export default function Footer() {
                 rel="noopener noreferrer"
                 className="footer-social-link"
               >
-                <Github size={20} />
-              </a>
-              <a
-                href="https://linkedin.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="footer-social-link"
-              >
-                <Linkedin size={20} />
+                <Mail size={20} />
               </a>
             </div>
           </div>
