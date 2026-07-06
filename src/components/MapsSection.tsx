@@ -178,7 +178,6 @@ export default function MapsSection() {
               <Card className="maps-detail-card">
                 <div style={{ marginBottom: "1rem" }}>
                   <h4 className="maps-detail-title">{selectedLocation.name}</h4>
-                  <p className="maps-detail-text">{selectedLocation.address}</p>
                 </div>
 
                 <div style={{ marginBottom: "1rem" }}>

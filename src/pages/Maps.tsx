@@ -93,13 +93,13 @@ function loadSavedLixeiraTypes(): Record<string, string[]> {
       return Object.fromEntries(
         Object.entries(parsed).map(([key, value]) => [
           key,
-          Array.isArray(value) ? value.filter((item) => typeof item === "string") : [],
+          Array.isArray(value)
+            ? value.filter(item => typeof item === "string")
+            : [],
         ])
       );
     }
-  } catch {
-    
-  }
+  } catch {}
 
   return {};
 }
@@ -130,19 +130,17 @@ function getSavedLixeiraTypes(id: string): string[] | undefined {
   return loadSavedLixeiraTypes()[id];
 }
 
-
-
-
-
-
-
-
-function extractWasteTypeNames(item: any, wasteTypes: WasteTypeOption[]): string[] {
+function extractWasteTypeNames(
+  item: any,
+  wasteTypes: WasteTypeOption[]
+): string[] {
   const normalizeType = (tipo: any): string | null => {
     if (tipo == null) return null;
     if (typeof tipo === "string") return tipo;
     if (typeof tipo === "number") {
-      return wasteTypes.find((type) => type.id === tipo)?.nomeTipo ?? String(tipo);
+      return (
+        wasteTypes.find(type => type.id === tipo)?.nomeTipo ?? String(tipo)
+      );
     }
     if (typeof tipo === "object") {
       const candidateName = tipo?.nomeTipo ?? tipo?.nome ?? tipo?.tipo ?? null;
@@ -150,7 +148,9 @@ function extractWasteTypeNames(item: any, wasteTypes: WasteTypeOption[]): string
       if (tipo?.id != null) {
         const id = Number(tipo.id);
         if (!Number.isNaN(id)) {
-          return wasteTypes.find((type) => type.id === id)?.nomeTipo ?? String(id);
+          return (
+            wasteTypes.find(type => type.id === id)?.nomeTipo ?? String(id)
+          );
         }
       }
     }
@@ -163,7 +163,7 @@ function extractWasteTypeNames(item: any, wasteTypes: WasteTypeOption[]): string
     item?.informativos,
     item?.residuosTipos,
     item?.tiposResiduos,
-  ].filter((value) => Array.isArray(value) && value.length > 0);
+  ].filter(value => Array.isArray(value) && value.length > 0);
 
   const source = candidateArrays[0] ?? [];
 
@@ -184,8 +184,9 @@ function extractWasteTypeNames(item: any, wasteTypes: WasteTypeOption[]): string
   const resolvedNames = fallbackIds
     .map((maybeId: any) => Number(maybeId))
     .filter((id: number) => !Number.isNaN(id))
-    .map((id: number) =>
-      wasteTypes.find((type) => type.id === id)?.nomeTipo ?? String(id)
+    .map(
+      (id: number) =>
+        wasteTypes.find(type => type.id === id)?.nomeTipo ?? String(id)
     );
 
   if (resolvedNames.length > 0) {
@@ -193,8 +194,10 @@ function extractWasteTypeNames(item: any, wasteTypes: WasteTypeOption[]): string
   }
 
   if (
-    (Array.isArray(item?.informativosTiposIds) && item.informativosTiposIds.length > 0) ||
-    (Array.isArray(item?.informativosTipos) && item.informativosTipos.length > 0)
+    (Array.isArray(item?.informativosTiposIds) &&
+      item.informativosTiposIds.length > 0) ||
+    (Array.isArray(item?.informativosTipos) &&
+      item.informativosTipos.length > 0)
   ) {
     console.warn(
       "[MapsPage] Lixeira veio com informativosTipos/informativosTiposIds mas não foi possível resolver os nomes dos tipos. Confira o formato exato da resposta de " +
@@ -218,17 +221,21 @@ function mapBackendLixeiraToTrashLocation(
   savedTypesById: Record<string, string[]> = {}
 ): TrashLocation {
   const resolvedTypes = extractWasteTypeNames(item, wasteTypes);
-  const savedTypes = item?.id ? savedTypesById[String(item.id)] ?? [] : [];
+  const savedTypes = item?.id ? (savedTypesById[String(item.id)] ?? []) : [];
   const types = resolvedTypes.length > 0 ? resolvedTypes : savedTypes;
 
   return {
     id: String(item?.id ?? Date.now()),
     lat: Number(item?.latitude ?? 0),
     lng: Number(item?.longitude ?? 0),
-    name: types.length > 0 ? `Lixeira ${types.join(" / ")}` : "Lixeira cadastrada",
+    name:
+      types.length > 0 ? `Lixeira ${types.join(" / ")}` : "Lixeira cadastrada",
     beach: types.length > 0 ? "Tipos cadastrados" : "Local cadastrado",
     types,
-    address: types.length > 0 ? `Tipos: ${types.join(", ")}` : `Lat ${item?.latitude ?? 0}, Lng ${item?.longitude ?? 0}`,
+    address:
+      types.length > 0
+        ? `Tipos: ${types.join(", ")}`
+        : `Lat ${item?.latitude ?? 0}, Lng ${item?.longitude ?? 0}`,
     source: "backend",
   };
 }
@@ -239,11 +246,12 @@ const TRANSPORT_MODES: {
   value: TransportMode;
   label: string;
   icon: typeof Car;
-}[] = [
-  { value: "walking", label: "", icon: Footprints },
-];
+}[] = [{ value: "walking", label: "A pé", icon: Footprints }];
 
-const TRANSPORT_MODE_TO_BACKEND: Record<TransportMode, "A_PE" | "BICICLETA" | "CARRO"> = {
+const TRANSPORT_MODE_TO_BACKEND: Record<
+  TransportMode,
+  "A_PE" | "BICICLETA" | "CARRO"
+> = {
   walking: "A_PE",
   cycling: "BICICLETA",
   driving: "CARRO",
@@ -397,7 +405,9 @@ export default function MapsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditingTrash, setIsEditingTrash] = useState(false);
   const [editingTrashId, setEditingTrashId] = useState<string | null>(null);
-  const [editingTrashSource, setEditingTrashSource] = useState<"backend" | "static" | null>(null);
+  const [editingTrashSource, setEditingTrashSource] = useState<
+    "backend" | "static" | null
+  >(null);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedTrash, setSelectedTrash] = useState<TrashLocation | null>(
     null
@@ -405,7 +415,7 @@ export default function MapsPage() {
   const [showRouting, setShowRouting] = useState(false);
   const [routeDistance, setRouteDistance] = useState<string | null>(null);
   const [routeDuration, setRouteDuration] = useState<string | null>(null);
-  const [transportMode, setTransportMode] = useState<TransportMode>("driving");
+  const [transportMode, setTransportMode] = useState<TransportMode>("walking");
   const [formData, setFormData] = useState<Partial<TrashRegistration>>({
     name: "",
     beach: "",
@@ -413,17 +423,15 @@ export default function MapsPage() {
   });
   const [extraTrashes, setExtraTrashes] = useState<TrashLocation[]>([]);
   const [serverTrashes, setServerTrashes] = useState<TrashLocation[]>([]);
-  const [wasteTypes, setWasteTypes] = useState<WasteTypeOption[]>(DEFAULT_WASTE_TYPES);
+  const [wasteTypes, setWasteTypes] =
+    useState<WasteTypeOption[]>(DEFAULT_WASTE_TYPES);
   const [selectedTypeIds, setSelectedTypeIds] = useState<number[]>([]);
   const [isAuthenticated_, setIsAuthenticated] = useState(false);
+  const [authenticated, setAuthenticated] = useState(false);
 
   useEffect(() => {
     if (selectedTrash) {
-      console.log(
-        "[MapsPage] selectedTrash.types:",
-        selectedTrash.types,
-       
-      );
+      console.log("[MapsPage] selectedTrash.types:", selectedTrash.types);
     }
   }, [selectedTrash, wasteTypes]);
   const [isAdmin_, setIsAdmin] = useState(false);
@@ -537,7 +545,11 @@ export default function MapsPage() {
 
       adminPinMarkerRef.current = marker;
 
-      map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 17), duration: 600 });
+      map.flyTo({
+        center: [lng, lat],
+        zoom: Math.max(map.getZoom(), 17),
+        duration: 600,
+      });
     },
     [removeAdminPin, scheduleGeocodeFromPin]
   );
@@ -585,18 +597,26 @@ export default function MapsPage() {
 
         const savedTypesById = loadSavedLixeiraTypes();
 
-        const normalizedTypes = backendInformativos.length > 0
-          ? backendInformativos.map((item: any) => ({
-              id: Number(item?.id),
-              nomeTipo: item?.nomeTipo ?? "Tipo",
-              cor: item?.cor ?? DEFAULT_WASTE_TYPE_COLORS[item?.nomeTipo] ?? "#64748b",
-            }))
-          : DEFAULT_WASTE_TYPES;
+        const normalizedTypes =
+          backendInformativos.length > 0
+            ? backendInformativos.map((item: any) => ({
+                id: Number(item?.id),
+                nomeTipo: item?.nomeTipo ?? "Tipo",
+                cor:
+                  item?.cor ??
+                  DEFAULT_WASTE_TYPE_COLORS[item?.nomeTipo] ??
+                  "#64748b",
+              }))
+            : DEFAULT_WASTE_TYPES;
 
         setWasteTypes(normalizedTypes);
 
         const mappedLixeiras = backendLixeiras.map(item =>
-          mapBackendLixeiraToTrashLocation(item, normalizedTypes, savedTypesById)
+          mapBackendLixeiraToTrashLocation(
+            item,
+            normalizedTypes,
+            savedTypesById
+          )
         );
         setServerTrashes(mappedLixeiras);
       } catch (error) {
@@ -712,11 +732,15 @@ export default function MapsPage() {
         timeout: 15000,
       });
 
-      watchId = navigator.geolocation.watchPosition(handlePosition, handleError, {
-        enableHighAccuracy: true,
-        maximumAge: 0,
-        timeout: 15000,
-      });
+      watchId = navigator.geolocation.watchPosition(
+        handlePosition,
+        handleError,
+        {
+          enableHighAccuracy: true,
+          maximumAge: 0,
+          timeout: 15000,
+        }
+      );
     };
 
     const requestLocationPermission = async () => {
@@ -821,10 +845,7 @@ export default function MapsPage() {
   }, []);
 
   const updateRoute = useCallback(
-    async (
-      from: { lat: number; lng: number },
-      trash: TrashLocation
-    ) => {
+    async (from: { lat: number; lng: number }, trash: TrashLocation) => {
       const map = mapRef.current;
       if (!map) return;
 
@@ -897,7 +918,9 @@ export default function MapsPage() {
               setRouteDistance(`${distanceKm.toFixed(1)} km`);
 
               if (durationSeconds != null) {
-                setRouteDuration(formatDuration(Math.round(durationSeconds / 60)));
+                setRouteDuration(
+                  formatDuration(Math.round(durationSeconds / 60))
+                );
               } else {
                 const speed = getAverageSpeed(transportMode);
                 setRouteDuration(
@@ -1202,7 +1225,7 @@ export default function MapsPage() {
     try {
       await deleteLixeiras({ id: editingTrashId });
 
-        removeSavedLixeiraTypes(editingTrashId);
+      removeSavedLixeiraTypes(editingTrashId);
       setSelectedTrash(null);
       setShowRouting(false);
       clearRoute();
@@ -1247,7 +1270,12 @@ export default function MapsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.address || selectedTypes.length === 0 || !formData.lat || !formData.lng) {
+    if (
+      !formData.address ||
+      selectedTypes.length === 0 ||
+      !formData.lat ||
+      !formData.lng
+    ) {
       Swal.fire({
         title: "Erro",
         text: "Preencha o endereço, a localização e selecione pelo menos um tipo.",
@@ -1275,7 +1303,10 @@ export default function MapsPage() {
                   lat: Number(formData.lat),
                   lng: Number(formData.lng),
                   types: selectedTypes,
-                  name: selectedTypes.length > 0 ? `Lixeira ${selectedTypes.join(" / ")}` : "Lixeira cadastrada",
+                  name:
+                    selectedTypes.length > 0
+                      ? `Lixeira ${selectedTypes.join(" / ")}`
+                      : "Lixeira cadastrada",
                   address: formData.address as string,
                   beach: formData.address as string,
                 }
@@ -1298,14 +1329,18 @@ export default function MapsPage() {
         });
 
         const createdId = createdResponse?.data?.id;
-        const createdKey = createdId != null ? String(createdId) : String(Date.now());
+        const createdKey =
+          createdId != null ? String(createdId) : String(Date.now());
         saveLixeiraTypes(createdKey, selectedTypes);
 
         const saved: TrashLocation = {
           id: createdKey,
           lat: Number(formData.lat),
           lng: Number(formData.lng),
-          name: selectedTypes.length > 0 ? `Lixeira ${selectedTypes.join(" / ")}` : "Lixeira cadastrada",
+          name:
+            selectedTypes.length > 0
+              ? `Lixeira ${selectedTypes.join(" / ")}`
+              : "Lixeira cadastrada",
           beach: formData.address as string,
           types: selectedTypes,
           address: formData.address as string,
@@ -1340,6 +1375,9 @@ export default function MapsPage() {
       });
     }
   };
+  
+
+
 
   return (
     <div className="maps-page">
@@ -1369,10 +1407,24 @@ export default function MapsPage() {
         </div>
       )}
 
+
       {isAuthenticated_ && (
-        <div className="maps-user-location" style={{ top: "20px", right: "20px", left: "auto",marginTop: '5vh' }}>
-          <div className="maps-location-badge" style={{ backgroundColor: "#10b981", color: "white" }}>
-            <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "white" }}></div>
+        <div
+          className="maps-user-location"
+          style={{ top: "30px", right: "20px", left: "auto", marginTop: "5vh" }}
+        >
+          <div
+            className="maps-location-badge"
+            style={{ backgroundColor: "#10b981", color: "white" }}
+          >
+            <div
+              style={{
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                backgroundColor: "white",
+              }}
+            ></div>
             <span>Logado{isAdmin_ ? " (Admin)" : ""}</span>
           </div>
         </div>
@@ -1388,7 +1440,6 @@ export default function MapsPage() {
           </div>
         </div>
       )}
-
 
       {selectedTrash && userLocation && (
         <div className="maps-trash-details-card">
@@ -1430,9 +1481,7 @@ export default function MapsPage() {
             <p className="maps-card-address">
               <strong>Endereço:</strong> {selectedTrash.address}
             </p>
-            <p className="maps-card-beach">
-              <strong>Praia:</strong> {selectedTrash.beach}
-            </p>
+           
           </div>
 
           <div className="maps-card-waste-section">
@@ -1444,7 +1493,12 @@ export default function MapsPage() {
                   <span
                     key={type}
                     className="maps-card-type-badge"
-                    style={{ background: option?.cor ?? DEFAULT_WASTE_TYPE_COLORS[type] ?? "#64748b" }}
+                    style={{
+                      background:
+                        option?.cor ??
+                        DEFAULT_WASTE_TYPE_COLORS[type] ??
+                        "#64748b",
+                    }}
                   >
                     {type}
                   </span>
@@ -1481,12 +1535,7 @@ export default function MapsPage() {
           {showRouting && routeDistance && routeDuration && (
             <div className="maps-card-route-info">
               <p>
-                <strong>Modo:</strong>{" "}
-                {transportMode === "driving"
-                  ? "Carro"
-                  : transportMode === "cycling"
-                    ? "Bicicleta"
-                    : "A pé"}
+                <strong>Modo:</strong> A pé
               </p>
               <p>
                 <strong>Distância:</strong> {routeDistance}
@@ -1497,7 +1546,10 @@ export default function MapsPage() {
             </div>
           )}
 
-          <div className="maps-card-actions" style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          <div
+            className="maps-card-actions"
+            style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}
+          >
             {!showRouting ? (
               <Button
                 onClick={() => setShowRouting(true)}
@@ -1550,16 +1602,21 @@ export default function MapsPage() {
       >
         <DialogContent className="maps-dialog">
           <DialogHeader>
-            <DialogTitle>{isEditingTrash ? "Editar Lixeira" : "Registrar Nova Lixeira"}</DialogTitle>
+            <DialogTitle>
+              {isEditingTrash ? "Editar Lixeira" : "Registrar Nova Lixeira"}
+            </DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="maps-form">
-
             <div className="maps-form-group">
               <Label htmlFor="address">Endereço</Label>
               <Input
                 id="address"
-                placeholder={isGeocodingAddress ? "Buscando endereço..." : "Ex: Avenida Beira Mar, 1000"}
+                placeholder={
+                  isGeocodingAddress
+                    ? "Buscando endereço..."
+                    : "Ex: Avenida Beira Mar, 1000"
+                }
                 value={formData.address || ""}
                 disabled={isGeocodingAddress}
                 onChange={e =>
@@ -1596,7 +1653,9 @@ export default function MapsPage() {
                           className="maps-type-checkbox-dot"
                           style={{ backgroundColor: type.cor }}
                         />
-                        <span className="maps-type-checkbox-label">{type.nomeTipo}</span>
+                        <span className="maps-type-checkbox-label">
+                          {type.nomeTipo}
+                        </span>
                       </span>
                     </label>
                   );
@@ -1607,7 +1666,9 @@ export default function MapsPage() {
             <div className="maps-form-group">
               <Label>Localização</Label>
               <p className="maps-type-helper">
-                Um marcador laranja apareceu no mapa. Arraste-o até o ponto exato da lixeira — o endereço acima é atualizado automaticamente.
+                Um marcador laranja apareceu no mapa. Arraste-o até o ponto
+                exato da lixeira — o endereço acima é atualizado
+                automaticamente.
               </p>
               <div className="maps-location-display">
                 <p>Latitude: {(formData.lat || 0).toFixed(6)}</p>
@@ -1617,7 +1678,12 @@ export default function MapsPage() {
 
             <div
               className="maps-form-actions"
-              style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", flexWrap: "wrap" }}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: "0.5rem",
+                flexWrap: "wrap",
+              }}
             >
               <div style={{ display: "flex", gap: "0.5rem" }}>
                 <Button
@@ -1630,11 +1696,17 @@ export default function MapsPage() {
                 >
                   Cancelar
                 </Button>
-                <Button type="submit">{isEditingTrash ? "Salvar Alterações" : "Registrar Lixeira"}</Button>
+                <Button type="submit">
+                  {isEditingTrash ? "Salvar Alterações" : "Registrar Lixeira"}
+                </Button>
               </div>
 
               {isEditingTrash && editingTrashSource === "backend" && (
-                <Button type="button" variant="destructive" onClick={handleDeleteTrash}>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={handleDeleteTrash}
+                >
                   Excluir Lixeira
                 </Button>
               )}

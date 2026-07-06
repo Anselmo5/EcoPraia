@@ -21,7 +21,7 @@ export default function Login() {
 
   
   if (isAuthenticated()) {
-    navigate("/perfil", { replace: true });
+    navigate("/maps", { replace: true });
     return null;
   }
 
@@ -33,11 +33,6 @@ export default function Login() {
     try {
       schema.parse({ email, password });
       const response = await login({ nome: "", email, senha: password });
-
-      
-      
-      
-      
       saveToken(response.token, response.role, response.id, email);
 
       const fallbackUser = await fetchCurrentUserInfo();
@@ -62,7 +57,7 @@ export default function Login() {
         );
       }
 
-      navigate("/perfil");
+      navigate("/maps");
     } catch (err) {
       if (err instanceof z.ZodError) {
         setError(err.message || "Error");
